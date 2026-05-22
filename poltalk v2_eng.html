@@ -1,0 +1,1941 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>POLTALK · Intelligent Work Support System</title>
+<link rel="stylesheet" href="assets_eng/styles.css" />
+<style>
+  :root {
+    /* override: use light bg for canvas, phones stay dark inside */
+    --canvas-bg: #f4f6fb;
+  }
+  [data-theme="dark"], :root {
+    --canvas-bg: #0a0f1c;
+  }
+  html, body {
+    background: var(--canvas-bg);
+    overflow-x: auto;
+  }
+
+  /* Canvas header */
+  .canvas-head {
+    padding: 28px 36px 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-elev);
+    position: sticky; top: 0; z-index: 10;
+  }
+  .canvas-head .row {
+    display: flex; align-items: center; gap: 18px;
+  }
+  .canvas-head h1 {
+    margin: 0; font-size: 22px; letter-spacing: -0.015em;
+  }
+  .canvas-head .brand-mark {
+    width: 36px; height: 36px; border-radius: 9px;
+    background: linear-gradient(135deg, var(--navy-700), var(--navy-900));
+    display: grid; place-items: center; color: var(--gold);
+    font-weight: 700; font-size: 16px; font-family: var(--font-mono);
+    flex: 0 0 36px;
+  }
+  .canvas-head p {
+    color: var(--text-mut); font-size: 13px; margin: 6px 0 0;
+    max-width: 880px; line-height: 1.6;
+  }
+  .canvas-head .legend {
+    display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap;
+  }
+  .canvas-head .legend .item {
+    display: inline-flex; gap: 6px; align-items: center;
+    padding: 4px 10px; border-radius: 999px;
+    background: var(--panel); border: 1px solid var(--border);
+    font-size: 11.5px; color: var(--text-mut);
+  }
+  .canvas-head .legend .ic {
+    width: 18px; height: 18px; border-radius: 4px;
+    display: grid; place-items: center; font-size: 11px;
+    background: var(--accent-bg); color: var(--accent);
+  }
+
+  /* Phone strip layout */
+  .phones-row {
+    display: flex; gap: 28px; padding: 36px 36px 80px;
+    align-items: flex-start;
+  }
+
+  .scene-col {
+    display: flex; flex-direction: column;
+    gap: 12px; flex: 0 0 auto;
+  }
+  .scene-label {
+    display: flex; align-items: center; gap: 10px;
+    padding: 0 8px;
+  }
+  .scene-label .num {
+    width: 26px; height: 26px; border-radius: 6px;
+    background: var(--accent); color: white;
+    display: grid; place-items: center;
+    font-family: var(--font-mono); font-size: 12px; font-weight: 600;
+  }
+  .scene-label .ttl {
+    font-size: 14px; font-weight: 600; letter-spacing: -0.01em;
+  }
+  .scene-label .sub {
+    font-size: 11.5px; color: var(--text-mut); margin-top: 1px;
+  }
+  .scene-tag {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 8px; border-radius: 999px;
+    background: var(--accent-bg); color: var(--accent);
+    font-size: 10.5px; font-weight: 500;
+    border: 1px solid color-mix(in oklab, var(--accent) 25%, transparent);
+    width: max-content;
+    margin: 0 8px;
+  }
+
+  /* ============= iPhone frame ============= */
+  .phone {
+    width: 360px;
+    height: 740px;
+    background: #111;
+    border-radius: 44px;
+    padding: 10px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.35), 0 0 0 2px #222 inset;
+    position: relative;
+  }
+  [data-theme="light"] .phone {
+    box-shadow: 0 20px 60px rgba(10,30,80,0.18), 0 0 0 2px #1a1a1a inset;
+  }
+  .phone .notch {
+    position: absolute;
+    top: 18px; left: 50%; transform: translateX(-50%);
+    width: 100px; height: 28px;
+    background: #000; border-radius: 16px;
+    z-index: 10;
+  }
+  .phone .screen {
+    width: 100%; height: 100%;
+    border-radius: 36px;
+    background: #f6f8fc;
+    overflow: hidden;
+    position: relative;
+    display: flex; flex-direction: column;
+  }
+
+  /* Status bar */
+  .status {
+    height: 44px;
+    display: flex; align-items: center;
+    padding: 0 22px 0 24px;
+    font-family: -apple-system, sans-serif;
+    font-size: 14px; font-weight: 600;
+    color: #000;
+    flex-shrink: 0;
+  }
+  .status .time { width: 60px; }
+  .status .right {
+    margin-left: auto; display: flex; gap: 5px; align-items: center;
+    font-size: 11px;
+  }
+  .status .signal {
+    display: inline-flex; align-items: end; gap: 1.5px;
+  }
+  .status .signal i {
+    width: 3px; background: #000; border-radius: 0.5px;
+  }
+  .status .battery {
+    width: 24px; height: 11px;
+    border: 1px solid #000; border-radius: 2.5px;
+    position: relative; padding: 1px;
+  }
+  .status .battery::after {
+    content: ""; position: absolute; right: -3px; top: 3px;
+    width: 2px; height: 5px; background: #000;
+    border-radius: 0 1px 1px 0;
+  }
+  .status .battery i { display: block; height: 100%; width: 70%; background: #000; border-radius: 1.5px; }
+
+  .status.dark { color: #fff; }
+  .status.dark .signal i { background: #fff; }
+  .status.dark .battery { border-color: #fff; }
+  .status.dark .battery::after { background: #fff; }
+  .status.dark .battery i { background: #fff; }
+
+  /* Slack-style top bar */
+  .app-top {
+    padding: 4px 16px 10px;
+    background: #150f1a; /* deep aubergine — slack-ish */
+    color: white;
+    display: flex; align-items: center; gap: 10px;
+    flex-shrink: 0;
+  }
+  .app-top.navy { background: var(--navy-900); }
+  .app-top .ws-mark {
+    width: 28px; height: 28px; border-radius: 6px;
+    background: linear-gradient(135deg, #243c66, #0e1d3b);
+    display: grid; place-items: center;
+    color: var(--gold); font-weight: 700;
+    font-size: 12px; font-family: var(--font-mono);
+    border: 1px solid #ffcb0540;
+  }
+  .app-top .ws-name {
+    display: flex; flex-direction: column; line-height: 1.1;
+    flex: 1; min-width: 0;
+  }
+  .app-top .ws-name b { font-size: 13.5px; }
+  .app-top .ws-name small { font-size: 10.5px; color: #b4b8c4; }
+  .app-top .ic-btn {
+    width: 30px; height: 30px;
+    border-radius: 50%; background: rgba(255,255,255,0.06);
+    color: white; display: grid; place-items: center;
+    border: 0;
+  }
+  .app-top .av {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--navy-600), var(--navy-800));
+    color: white; display: grid; place-items: center;
+    font-size: 11px; font-weight: 600;
+    border: 2px solid #2dba4e;
+  }
+
+  /* Channel header (inside chat) */
+  .ch-head {
+    padding: 12px 14px;
+    background: #1a1320;
+    color: white;
+    display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    flex-shrink: 0;
+  }
+  .ch-head.navy { background: var(--navy-800); }
+  .ch-head .back {
+    width: 26px; color: white; flex: 0 0 26px;
+  }
+  .ch-head .nm {
+    display: flex; flex-direction: column; line-height: 1.15; flex: 1; min-width: 0;
+  }
+  .ch-head .nm b { font-size: 14.5px; display: flex; align-items: center; gap: 4px;}
+  .ch-head .nm small { font-size: 10.5px; color: #b4b8c4; margin-top: 1px; }
+  .ch-head .actions { display: flex; gap: 14px; color: white; }
+
+  /* Body */
+  .body {
+    flex: 1; overflow-y: auto;
+    background: #ffffff;
+    padding: 12px 14px 14px;
+    font-family: -apple-system, Pretendard, sans-serif;
+    font-size: 13.5px;
+    color: #1a1a1a;
+  }
+
+  /* Channel list rows */
+  .chan-sec-title {
+    color: #8e8e93; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    padding: 14px 4px 6px;
+    font-weight: 600;
+  }
+  .chan-row {
+    display: grid;
+    grid-template-columns: 36px 1fr auto;
+    gap: 10px; align-items: center;
+    padding: 8px 4px;
+  }
+  .chan-row .ic {
+    width: 36px; height: 36px; border-radius: 8px;
+    background: #ecedf3;
+    display: grid; place-items: center;
+    font-size: 16px;
+    color: #4a4a52;
+  }
+  .chan-row .ic.agent {
+    background: var(--navy-50);
+    color: var(--navy-700);
+    border: 1px dashed var(--navy-700);
+  }
+  .chan-row .ic.gold { background: #fff4cc; color: #b68800; }
+  .chan-row .nm {
+    font-size: 14px; font-weight: 600;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .chan-row .preview {
+    font-size: 12px; color: #8e8e93;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    margin-top: 2px;
+  }
+  .chan-row .right { text-align: right; display:flex; flex-direction:column; align-items:flex-end; gap: 4px;}
+  .chan-row .t { font-size: 11px; color: #8e8e93; }
+  .chan-row .badge-red {
+    background: #ed1b2f; color: white;
+    font-size: 10px; font-weight: 700;
+    padding: 1px 7px; border-radius: 999px;
+    font-family: var(--font-mono);
+  }
+  .chan-row .badge-mention {
+    background: var(--navy-700); color: white;
+    font-size: 10px; font-weight: 600;
+    padding: 1px 6px; border-radius: 999px;
+  }
+
+  /* Messages */
+  .day-divider {
+    display: flex; align-items: center; gap: 8px;
+    color: #8e8e93; font-size: 11px;
+    margin: 8px 0 12px;
+  }
+  .day-divider::before, .day-divider::after {
+    content: ""; flex: 1; height: 1px; background: #ecedf3;
+  }
+  .msg {
+    display: grid;
+    grid-template-columns: 36px 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .msg .av {
+    width: 36px; height: 36px; border-radius: 7px;
+    background: var(--panel-hi);
+    color: white;
+    display: grid; place-items: center;
+    font-size: 12px; font-weight: 600;
+    flex: 0 0 36px;
+  }
+  .msg .av.a-1 { background: linear-gradient(135deg, #5e3aa8, #3a1e6a); }
+  .msg .av.a-2 { background: linear-gradient(135deg, #2a6f6f, #134545); }
+  .msg .av.a-3 { background: linear-gradient(135deg, #c45c2a, #7a3811); }
+  .msg .av.a-4 { background: linear-gradient(135deg, #1a6fc0, #003a7a); }
+  .msg .av.a-me { background: linear-gradient(135deg, var(--navy-600), var(--navy-900)); }
+  .msg .av.bot {
+    background: linear-gradient(135deg, #0e1d3b, #1a2b4d);
+    color: var(--gold); border: 1px solid #ffcb0550;
+    font-size: 14px;
+  }
+  .msg .head {
+    display: flex; align-items: baseline; gap: 6px;
+    font-size: 12px;
+  }
+  .msg .head .who { font-weight: 700; font-size: 13.5px; color: #111; }
+  .msg .head .tag {
+    background: #d6f0d8; color: #1a6f30;
+    font-size: 9.5px; font-weight: 700;
+    padding: 1px 5px; border-radius: 3px;
+    text-transform: uppercase; letter-spacing: 0.02em;
+  }
+  .msg .head .tag.gold { background: #fff0b4; color: #6b4a00; }
+  .msg .head .tag.red  { background: #ffd6da; color: #8a0e1a; }
+  .msg .head .t { color: #8e8e93; font-size: 11px; margin-left: auto;}
+  .msg .text { margin-top: 1px; line-height: 1.5; color: #1a1a1a; word-break: break-word; }
+  .msg .text .mention {
+    background: var(--accent-bg); color: var(--accent);
+    padding: 0 4px; border-radius: 3px; font-weight: 500;
+  }
+
+  /* Cards inside chat (bot replies) */
+  .bot-card {
+    margin-top: 8px;
+    border: 1px solid #e6e7ec;
+    border-left: 3px solid var(--navy-700);
+    border-radius: 6px;
+    background: #fafbff;
+    overflow: hidden;
+  }
+  .bot-card.gold { border-left-color: #ffb800; background: #fffcf0; }
+  .bot-card.red  { border-left-color: var(--red); background: #fff5f6; }
+  .bot-card .hd {
+    padding: 8px 12px;
+    font-size: 11.5px; color: #4a4a52;
+    display: flex; align-items: center; gap: 6px;
+    border-bottom: 1px solid #ecedf3;
+    background: rgba(0,0,0,0.02);
+  }
+  .bot-card .hd b { color: #111; font-size: 12.5px; }
+  .bot-card .bd { padding: 10px 12px; font-size: 12.5px; }
+  .bot-card table {
+    width: 100%; border-collapse: collapse;
+    font-size: 11.5px;
+  }
+  .bot-card table th, .bot-card table td {
+    text-align: left; padding: 5px 4px;
+    border-bottom: 1px solid #ecedf3;
+  }
+  .bot-card table th {
+    color: #8e8e93; font-weight: 600; font-size: 10.5px;
+    text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .bot-card .ft {
+    display: flex; align-items: center; gap: 4px;
+    padding: 6px 12px;
+    border-top: 1px solid #ecedf3;
+    background: rgba(0,0,0,0.02);
+    font-size: 10.5px; color: #8e8e93;
+  }
+  .bot-card .btn-mini {
+    padding: 3px 8px;
+    background: white;
+    border: 1px solid #d6d8e0;
+    border-radius: 4px;
+    font-size: 11px; color: #1a1a1a;
+    font-weight: 500;
+  }
+  .bot-card .btn-mini.primary { background: var(--navy-700); color: white; border-color: var(--navy-800); }
+
+  /* Composer (input) */
+  .comp {
+    padding: 8px 10px 10px;
+    background: white;
+    border-top: 1px solid #ecedf3;
+    flex-shrink: 0;
+  }
+  .comp .box {
+    background: #f4f6fb; border-radius: 18px;
+    padding: 4px 8px 4px 14px;
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13.5px;
+  }
+  .comp .box input {
+    flex: 1; border: 0; outline: 0; background: transparent;
+    font: inherit; padding: 7px 0;
+    color: #1a1a1a;
+  }
+  .comp .box input::placeholder { color: #8e8e93; }
+  .comp .actions {
+    display: flex; gap: 14px; padding: 8px 4px 0;
+    color: #4a4a52; font-size: 11px;
+  }
+  .comp .actions span { display: inline-flex; gap: 4px; align-items: center; }
+  .send-pill {
+    width: 30px; height: 30px; border-radius: 50%;
+    background: var(--navy-700); color: white;
+    display: grid; place-items: center; flex: 0 0 30px;
+  }
+
+  /* Bottom tab bar */
+  .tabs {
+    display: grid; grid-template-columns: repeat(5, 1fr);
+    background: white; padding: 6px 0 26px;
+    border-top: 1px solid #ecedf3;
+    flex-shrink: 0;
+  }
+  .tabs .tab {
+    display: flex; flex-direction: column; align-items: center;
+    font-size: 10px; color: #8e8e93;
+    gap: 2px;
+    position: relative;
+  }
+  .tabs .tab.on { color: var(--navy-700); }
+  .tabs .tab .b {
+    position: absolute; top: -2px; right: 18%;
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--red); border: 2px solid white;
+  }
+
+  /* Push notification (lock screen style) */
+  .lock-bg {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(120% 80% at 50% 0%, rgba(0,84,166,0.45), transparent 50%),
+      linear-gradient(180deg, #001a3e 0%, #050a14 80%);
+  }
+  .lock-content {
+    position: relative; z-index: 1;
+    flex: 1; display: flex; flex-direction: column;
+    color: white;
+    padding: 12px 16px;
+  }
+  .lock-time {
+    text-align: center; padding: 36px 0 8px;
+    font-family: -apple-system, sans-serif;
+  }
+  .lock-time .h {
+    font-size: 78px; font-weight: 200; line-height: 0.9;
+    letter-spacing: -2px;
+  }
+  .lock-time .d { font-size: 16px; color: #c8d2e8; margin-top: 6px; }
+  .lock-cards { padding: 0 0; flex: 1; }
+
+  .push {
+    background: rgba(50,50,55,0.65);
+    backdrop-filter: blur(20px);
+    border-radius: 14px; padding: 10px 12px;
+    margin-bottom: 8px;
+    color: white;
+    display: grid;
+    grid-template-columns: 32px 1fr auto;
+    gap: 10px; align-items: flex-start;
+  }
+  .push .app-ic {
+    width: 32px; height: 32px; border-radius: 7px;
+    background: linear-gradient(135deg, var(--navy-700), var(--navy-900));
+    display: grid; place-items: center;
+    color: var(--gold); font-weight: 700; font-size: 12px;
+    flex: 0 0 32px;
+    font-family: var(--font-mono);
+  }
+  .push .app-ic.urgent { background: linear-gradient(135deg, #b71826, #6a0010); color: white; }
+  .push .nm { font-size: 12px; color: #e0e0e0; display: flex; gap: 6px; align-items: center; }
+  .push .nm .urgent { background: #ed1b2f; color: white; font-size: 9.5px; padding: 1px 5px; border-radius: 3px; font-weight: 600; }
+  .push .ttl { font-weight: 700; font-size: 13.5px; margin-top: 2px; }
+  .push .bd { font-size: 12.5px; line-height: 1.4; color: #d8dde6; margin-top: 2px;}
+  .push .t { font-size: 11px; color: #8e95a8; }
+
+  /* Modal sheet (gatekeeper) */
+  .sheet-backdrop {
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 5;
+  }
+  .sheet {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    background: white; border-radius: 18px 18px 0 0;
+    padding: 16px 16px 24px;
+    z-index: 6;
+    box-shadow: 0 -20px 40px rgba(0,0,0,0.2);
+  }
+  .sheet .grip {
+    width: 36px; height: 4px; background: #d6d8e0;
+    border-radius: 2px; margin: 0 auto 12px;
+  }
+  .sheet h3 {
+    margin: 0 0 4px; font-size: 16px; color: #111;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .sheet p.sub { margin: 0 0 14px; font-size: 12.5px; color: #4a4a52; line-height: 1.55; }
+  .sheet .field {
+    padding: 10px 12px;
+    background: #f7f8fc; border-radius: 8px;
+    margin-bottom: 8px;
+    display: flex; gap: 8px; align-items: center;
+    font-size: 12.5px;
+  }
+  .sheet .field .ic { width: 22px; height: 22px; border-radius: 50%; display:grid; place-items:center; font-size: 12px; flex: 0 0 22px; }
+  .sheet .field .ic.ok { background: #d6f0d8; color: #1a6f30; }
+  .sheet .field .ic.warn { background: #fff0b4; color: #6b4a00; }
+  .sheet .field .ic.err { background: #ffd6da; color: #8a0e1a; }
+  .sheet .field b { color: #111; }
+
+  /* Highlighted "pinned" / system block */
+  .system-block {
+    background: linear-gradient(180deg, #fffaeb, #fff);
+    border: 1px solid #ffd97a;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin: 10px 0 14px;
+    font-size: 12px;
+    color: #4a3000;
+    display: flex; gap: 8px; align-items: flex-start;
+  }
+  .system-block .ic { color: #b88800; flex: 0 0 16px; }
+
+  /* Search bar in directory */
+  .search-bar {
+    background: #ecedf3; border-radius: 10px;
+    padding: 8px 12px;
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; color: #8e8e93;
+    margin-bottom: 14px;
+  }
+  .dir-card {
+    display: grid;
+    grid-template-columns: 44px 1fr auto;
+    gap: 12px; align-items: center;
+    padding: 12px;
+    border: 1px solid #ecedf3;
+    border-radius: 10px;
+    margin-bottom: 8px;
+    background: white;
+  }
+  .dir-card .ic {
+    width: 44px; height: 44px; border-radius: 9px;
+    background: #ecedf3; display: grid; place-items: center;
+    font-size: 22px;
+  }
+  .dir-card .nm { font-size: 14px; font-weight: 700; }
+  .dir-card .nm .v {
+    font-size: 10px; color: #8e8e93; font-weight: 500;
+    margin-left: 4px;
+  }
+  .dir-card .by { font-size: 11.5px; color: #8e8e93; margin-top: 2px; }
+  .dir-card .stats { font-size: 10.5px; color: #8e8e93; margin-top: 3px; display: flex; gap: 10px; }
+  .dir-card .add {
+    padding: 5px 12px;
+    background: var(--navy-700); color: white;
+    border-radius: 6px; font-size: 12px; font-weight: 600;
+    flex: 0 0 auto;
+  }
+  .dir-card .add.installed { background: #ecedf3; color: #4a4a52; }
+
+  /* Floating annotation arrow per scene */
+  .anno {
+    background: white;
+    border: 1px solid var(--border-2);
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin: 0 8px;
+    font-size: 12px;
+    color: var(--text);
+    line-height: 1.55;
+    box-shadow: 0 2px 8px rgba(10,30,80,0.05);
+  }
+  [data-theme="dark"] .anno { background: var(--panel); }
+  .anno b { color: var(--accent); }
+
+  /* Theme toggle button */
+  .theme-toggle {
+    position: fixed; top: 18px; right: 22px;
+    width: 36px; height: 36px;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 50%; display: grid; place-items: center;
+    cursor: pointer; z-index: 20;
+    color: var(--text-mut);
+  }
+
+  /* ============= NEW: Ephemeral chat ============= */
+  .ephemeral-bg {
+    background:
+      repeating-linear-gradient(135deg, transparent 0 18px, rgba(20,30,60,0.025) 18px 19px),
+      linear-gradient(180deg, #f6f3ee 0%, #efe8dc 100%);
+  }
+  .ephemeral-banner {
+    background: #1a1320;
+    color: #ffd97a;
+    padding: 8px 12px;
+    display: flex; gap: 8px; align-items: center;
+    font-size: 11.5px;
+    border-bottom: 1px dashed #4a3a26;
+  }
+  .ephemeral-banner b { color: #fff; }
+  .ephemeral-banner .timer {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    background: rgba(255,217,122,0.15);
+    padding: 2px 7px; border-radius: 4px;
+    font-size: 11px;
+  }
+  .msg.ephemeral .text {
+    background: rgba(255,255,255,0.5);
+    border: 1px dashed #c8b89a;
+    padding: 8px 10px; border-radius: 8px;
+    margin-top: 4px;
+  }
+
+  /* ============= NEW: Calendar mini grid ============= */
+  .cal-grid {
+    display: grid;
+    grid-template-columns: 38px repeat(5, 1fr);
+    border: 1px solid #ecedf3; border-radius: 6px; overflow: hidden;
+    font-size: 10.5px;
+    background: #fff;
+  }
+  .cal-grid > div {
+    border-right: 1px solid #ecedf3;
+    border-bottom: 1px solid #ecedf3;
+    padding: 4px 5px;
+    min-height: 18px;
+  }
+  .cal-grid > div:nth-child(6n) { border-right: 0; }
+  .cal-grid .h {
+    background: #f7f8fc;
+    text-align: center; color: #4a4a52;
+    font-weight: 600; font-size: 10px;
+    padding: 5px 0;
+  }
+  .cal-grid .t {
+    color: #8e8e93; text-align: right;
+    font-family: var(--font-mono); font-size: 9.5px;
+  }
+  .cal-grid .busy {
+    background: repeating-linear-gradient(45deg, #d6d8e0 0 3px, #ecedf3 3px 6px);
+  }
+  .cal-grid .mine {
+    background: var(--navy-700); color: white;
+    font-weight: 600; text-align: center;
+    font-size: 9px;
+  }
+  .cal-grid .slot {
+    background: #e8efff;
+    color: var(--navy-700);
+    text-align: center; font-weight: 600;
+    font-size: 9.5px;
+  }
+  .cal-grid .slot.pick {
+    background: var(--gold); color: #1a1a1a;
+    border: 1.5px solid #b68800;
+  }
+
+  .slot-chip {
+    display: flex; gap: 6px; align-items: center;
+    padding: 8px 10px;
+    background: #fff; border: 1px solid #d6d8e0;
+    border-radius: 8px;
+    font-size: 12px; margin-bottom: 6px;
+  }
+  .slot-chip.pick {
+    border-color: var(--gold); background: #fffaeb;
+    border-width: 1.5px;
+  }
+  .slot-chip .ts { font-weight: 700; color: #111; font-family: var(--font-mono); }
+  .slot-chip .meta { color: #8e8e93; font-size: 10.5px; }
+  .slot-chip .conflict {
+    margin-left: auto; font-size: 10px;
+    color: #1a6f30; font-weight: 600;
+  }
+  .slot-chip .conflict.warn { color: var(--amber); }
+
+  .room-card {
+    display: grid;
+    grid-template-columns: 36px 1fr auto;
+    gap: 10px; align-items: center;
+    padding: 9px 10px;
+    border: 1px solid #ecedf3;
+    border-radius: 8px;
+    margin-bottom: 6px;
+    background: #fff;
+    font-size: 11.5px;
+  }
+  .room-card.picked { border-color: var(--gold); background: #fffaeb; border-width: 1.5px; }
+  .room-card .ic {
+    width: 36px; height: 36px;
+    background: #f1e9ff; color: #5e3aa8;
+    border-radius: 6px; display: grid; place-items: center;
+  }
+  .room-card .nm { font-weight: 700; color: #111; font-size: 12.5px; }
+  .room-card .sub { color: #8e8e93; font-size: 10.5px; margin-top: 1px; }
+  .room-card .badge-ok {
+    background: #d6f0d8; color: #1a6f30;
+    font-size: 10px; padding: 2px 7px; border-radius: 4px;
+    font-weight: 600;
+  }
+
+  /* ============= NEW: Drive ============= */
+  .drive-crumb {
+    display: flex; gap: 4px; align-items: center;
+    font-size: 11.5px; color: #4a4a52;
+    padding: 8px 2px 10px;
+    flex-wrap: wrap;
+  }
+  .drive-crumb b { color: #111; font-weight: 700; }
+  .drive-crumb .sep { color: #c8c8d0; }
+  .drive-row {
+    display: grid;
+    grid-template-columns: 30px 1fr auto;
+    gap: 10px; align-items: center;
+    padding: 9px 6px;
+    border-bottom: 1px solid #f1f2f6;
+    font-size: 12.5px;
+  }
+  .drive-row .fi {
+    width: 28px; height: 28px; border-radius: 6px;
+    display: grid; place-items: center;
+    font-size: 12px; font-weight: 700;
+    color: #fff;
+  }
+  .drive-row .fi.folder { background: #f3c860; color: #6b4a00; }
+  .drive-row .fi.hwp { background: #fef2f0; color: #c45c2a; }
+  .drive-row .fi.pdf { background: #ffd6da; color: #8a0e1a; }
+  .drive-row .fi.img { background: #e6f5ea; color: #1a6f30; }
+  .drive-row .fi.aud { background: #f1e9ff; color: #5e3aa8; }
+  .drive-row .fi.xls { background: #d8efe2; color: #0f5a32; }
+  .drive-row .nm { font-weight: 600; color: #111; }
+  .drive-row .sub { font-size: 10.5px; color: #8e8e93; margin-top: 1px; display: flex; gap: 6px; }
+  .drive-row .perm {
+    font-size: 9.5px; padding: 2px 6px; border-radius: 999px;
+    font-weight: 600;
+    background: #ecedf3; color: #4a4a52;
+  }
+  .drive-row .perm.write { background: #d6f0d8; color: #1a6f30; }
+  .drive-row .perm.read { background: #e8efff; color: var(--navy-700); }
+  .drive-row .perm.secret { background: #ffd6da; color: #8a0e1a; }
+
+  /* ============= NEW: Wiki / Notion-style page ============= */
+  .wiki-crumb {
+    font-size: 11px; color: #8e8e93;
+    padding: 2px 0 8px;
+    display: flex; gap: 4px; flex-wrap: wrap;
+  }
+  .wiki-crumb b { color: #4a4a52; }
+  .wiki-crumb .here { color: var(--accent); font-weight: 600; }
+  .wiki h1 {
+    font-size: 19px; margin: 6px 0 10px; line-height: 1.25;
+    letter-spacing: -0.01em; color: #111;
+  }
+  .wiki .icon-emoji { font-size: 28px; line-height: 1; display: block; margin-bottom: 2px; }
+  .wiki .props {
+    display: grid; grid-template-columns: 80px 1fr;
+    gap: 4px 12px; font-size: 11.5px;
+    color: #4a4a52; margin: 6px 0 14px;
+  }
+  .wiki .props dt { color: #8e8e93; }
+  .wiki .props dd { margin: 0; color: #111; }
+  .wiki h2 {
+    font-size: 14.5px; margin: 16px 0 6px; color: #111;
+    letter-spacing: -0.005em;
+  }
+  .wiki p { margin: 4px 0 8px; line-height: 1.55; font-size: 12.5px; color: #1a1a1a; }
+  .wiki ul, .wiki ol { margin: 4px 0 8px; padding-left: 20px; font-size: 12.5px; line-height: 1.6; color: #1a1a1a; }
+  .wiki ul li::marker { color: #b6b6bc; }
+  .wiki code {
+    background: #f1f2f6; padding: 1px 5px; border-radius: 3px;
+    font-family: var(--font-mono); font-size: 11.5px;
+    color: #5e3aa8;
+  }
+  .wiki blockquote {
+    margin: 6px 0; padding: 6px 10px;
+    background: #fffaeb; border-left: 3px solid #ffb800;
+    border-radius: 0 6px 6px 0; font-size: 12px; color: #4a3000;
+  }
+  .wiki .subpage {
+    display: grid;
+    grid-template-columns: 22px 1fr auto;
+    gap: 8px; align-items: center;
+    padding: 7px 8px;
+    border: 1px solid #ecedf3;
+    border-radius: 6px;
+    margin: 4px 0;
+    font-size: 12px;
+    background: #fff;
+  }
+  .wiki .subpage:hover { background: #f7f8fc; }
+  .wiki .subpage .em { font-size: 14px; }
+  .wiki .subpage .arrow { color: #c8c8d0; }
+  .wiki .subpage b { color: #111; }
+  .wiki .subpage small { color: #8e8e93; font-size: 10.5px; margin-left: 4px;}
+  .wiki .callout {
+    display: flex; gap: 8px; padding: 9px 10px;
+    background: #e8efff; border-radius: 6px;
+    font-size: 12px; color: #1a1a1a; margin: 8px 0;
+    line-height: 1.5;
+  }
+  .wiki .callout .em { flex: 0 0 16px; }
+  .wiki-bar {
+    display: flex; gap: 8px; padding: 8px 4px;
+    border-bottom: 1px solid #ecedf3;
+    margin-bottom: 8px;
+    font-size: 11px;
+  }
+  .wiki-bar .pill {
+    padding: 3px 9px; border-radius: 999px;
+    background: #ecedf3; color: #4a4a52;
+    font-weight: 500;
+  }
+  .wiki-bar .pill.on { background: var(--navy-700); color: #fff; }
+</style>
+</head>
+<body data-theme="light">
+
+<button class="theme-toggle" id="theme-toggle" title="Theme">
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M13 9.5A5.5 5.5 0 1 1 6.5 3 4.5 4.5 0 0 0 13 9.5Z"/></svg>
+</button>
+
+<header class="canvas-head">
+  <div class="row">
+    <div class="brand-mark">P!</div>
+    <div>
+      <h1>POLTALK · Intelligent Work Support System</h1>
+      <p>A ChatOps environment where AI Platform agents enter the messenger and become coworkers. Four killer scenarios — mention invocation, proactive alerts, shift handoff, and data gatekeeping — in one flow.</p>
+      <div class="legend">
+        <div class="item"><span class="ic">@</span> mention-based agent invocation</div>
+        <div class="item"><span class="ic">⚡</span> event-driven proactive alerts</div>
+        <div class="item"><span class="ic">⟳</span> shift handoff thread summary</div>
+        <div class="item"><span class="ic">✓</span> Data quality gatekeeper</div>
+        <div class="item"><span class="ic">★</span> Store → messenger Install</div>
+        <div class="item"><span class="ic">⌛</span> Temp chat · session-end auto-destroy</div>
+        <div class="item"><span class="ic">📅</span> calendar + meeting temp auto-reserved</div>
+        <div class="item"><span class="ic">📁</span> Case drive</div>
+        <div class="item"><span class="ic">📒</span> wiki board (Notion-style)</div>
+        <a href="index_eng.html" style="margin-left:auto;color:var(--accent);font-size:12px;text-decoration:none;align-self:center;">← Back to AI Platform</a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="phones-row">
+
+  <!-- ============================================================
+       PHONE 1 — Home: Channels List
+       ============================================================ -->
+  <div class="scene-col">
+    <div class="scene-label"><div class="num">01</div><div><div class="ttl">Home · Channels List</div><div class="sub">Default entry view · bots and coworkers in one place</div></div></div>
+    <span class="scene-tag">Default View</span>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="screen">
+        <div class="status"><div class="time">9:41</div><div class="right"><span>5G</span><span class="signal"><i style="height:4px;"></i><i style="height:6px;"></i><i style="height:8px;"></i><i style="height:10px;"></i></span><span class="battery"><i></i></span></div></div>
+
+        <div class="app-top navy">
+          <div class="ws-mark">P!</div>
+          <div class="ws-name"><b>National Police Agency · POLTALK</b><small>Jang Ji-hoon · Cyber Investigation Unit</small></div>
+          <button class="ic-btn"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="4.5"/><path d="m13.5 13.5-3-3"/></svg></button>
+          <div class="av">J</div>
+        </div>
+
+        <div class="body">
+          <div style="background:linear-gradient(135deg, var(--accent-bg), #fff);border:1px solid color-mix(in oklab, var(--accent) 20%, #ecedf3);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+            <div style="width:32px;height:32px;background:var(--navy-700);color:var(--gold);border-radius:7px;display:grid;place-items:center;font-family:var(--font-mono);font-weight:700;">AI</div>
+            <div style="flex:1;font-size:12.5px;line-height:1.45;color:#1a1a1a;"><b>Today's AI auxiliaryance</b><br/><span style="color:#8e8e93;">Proactive Alerts 2 · shift briefing 1 pending</span></div>
+            <span style="background:var(--red);color:white;font-size:10px;padding:1px 7px;border-radius:10px;font-weight:700;">3</span>
+          </div>
+
+          <div class="chan-sec-title">★ Favorites</div>
+          <div class="chan-row">
+            <div class="ic gold">🔔</div>
+            <div>
+              <div class="nm"># cyber-duty <span style="color:#8e8e93;font-weight:400;font-size:11px;">(combined)</span></div>
+              <div class="preview"><span style="color:var(--red);">@DrugTrendDetect</span> New slang pattern detected...</div>
+            </div>
+            <div class="right"><div class="t">just now</div><div class="badge-red">7</div></div>
+          </div>
+          <div class="chan-row">
+            <div class="ic">📞</div>
+            <div><div class="nm"># voice-phishing-TF</div><div class="preview">Choi Min-ho: New variant 8 organized uploaded</div></div>
+            <div class="right"><div class="t">10:14</div><div class="badge-mention">@2</div></div>
+          </div>
+
+          <div class="chan-sec-title">Channels</div>
+          <div class="chan-row">
+            <div class="ic">🚓</div>
+            <div><div class="nm"># warrant-review</div><div class="preview">Lee Ji-won: v18 warrant form Review result Share</div></div>
+            <div class="right"><div class="t">09:42</div></div>
+          </div>
+          <div class="chan-row">
+            <div class="ic">📊</div>
+            <div><div class="nm"># daily-briefing</div><div class="preview"><b>daily-Cyber-Report</b>: 5/19 Report Draft Attach</div></div>
+            <div class="right"><div class="t">08</div></div>
+          </div>
+          <div class="chan-row">
+            <div class="ic">🐹</div>
+            <div><div class="nm"># staff-lounge</div><div class="preview">Kang Yu-ri: Lunch menu recs welcome 🍜</div></div>
+            <div class="right"><div class="t">Yesterday</div></div>
+          </div>
+
+          <div class="chan-sec-title">Agents (DM)</div>
+          <div class="chan-row">
+            <div class="ic agent">🤖</div>
+            <div>
+              <div class="nm">@AccountTrace <span style="color:#8e8e93;font-weight:400;font-size:11px;">· bots</span></div>
+              <div class="preview">Analysis complete. Please check the table.</div>
+            </div>
+            <div class="right"><div class="t">10:08</div><div class="badge-mention">2</div></div>
+          </div>
+          <div class="chan-row">
+            <div class="ic agent">🚗</div>
+            <div><div class="nm">@VehicleLookup · bots</div><div class="preview">Plate 7-Na-1234 result: Kim ○○ · Grandeur (IG)</div></div>
+            <div class="right"><div class="t">Yesterday</div></div>
+          </div>
+          <div class="chan-row">
+            <div class="ic agent">📝</div>
+            <div><div class="nm">@Summarize · bots</div><div class="preview">Today overnight shift briefing readyhas been</div></div>
+            <div class="right"><div class="t">07:14</div></div>
+          </div>
+
+          <div class="chan-sec-title">Messages (DM)</div>
+          <div class="chan-row">
+            <div class="ic" style="background:linear-gradient(135deg,#7a4a2a,#4a2a1a);color:white;">L</div>
+            <div><div class="nm">Lee Ji-won Lieutenant</div><div class="preview">Thanks! warrant application Review please</div></div>
+            <div class="right"><div class="t">09:50</div></div>
+          </div>
+        </div>
+
+        <div class="tabs">
+          <div class="tab on"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M3 11h2v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9h2L12 2z"/></svg>Home<span class="b"></span></div>
+          <div class="tab"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-5 4z"/></svg>DM<span class="b"></span></div>
+          <div class="tab"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="9" r="3"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg>bots</div>
+          <div class="tab"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Activity</div>
+          <div class="tab"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>More</div>
+        </div>
+      </div>
+    </div>
+    <div class="anno"><b>★ AI auxiliary banner</b> pinned top, anywhere Proactive Alerts·shift briefing, etc. bots Activity at a glance. Channels·DM·Agent coexist at the same level.</div>
+  </div>
+
+  <!-- ============================================================
+       PHONE 2 — Scene 1: @mention collaboration
+       ============================================================ -->
+  <div class="scene-col">
+    <div class="scene-label"><div class="num">02</div><div><div class="ttl">@AccountTrace calls</div><div class="sub">Invite bots like people in group chats</div></div></div>
+    <span class="scene-tag">Scenario 1 · Mention collaboration</span>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="screen">
+        <div class="status"><div class="time">10:08</div><div class="right"><span>5G</span><span class="signal"><i style="height:4px;"></i><i style="height:6px;"></i><i style="height:8px;"></i><i style="height:10px;"></i></span><span class="battery"><i></i></span></div></div>
+
+        <div class="ch-head navy">
+          <svg class="back" width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 3 5 8l5 5"/></svg>
+          <div style="width:28px;height:28px;background:#243c66;border-radius:6px;display:grid;place-items:center;font-size:14px;flex:0 0 28px;">📞</div>
+          <div class="nm"><b># voice-phishing-TF <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m3 6 5 4 5-4"/></svg></b><small>members 8 · bots 3 · Cyber Investigation Unit</small></div>
+          <div class="actions">
+            <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7a4 4 0 0 1 8 0v4l1 1.5H2L3 11Z"/></svg>
+            <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="3" cy="8" r="1.2"/><circle cx="8" cy="8" r="1.2"/><circle cx="13" cy="8" r="1.2"/></svg>
+          </div>
+        </div>
+
+        <div class="body" style="background:#fff;">
+          <div class="day-divider">Today · day</div>
+
+          <div class="msg">
+            <div class="av a-1">C</div>
+            <div>
+              <div class="head"><span class="who">Choi Min-ho Lieutenant</span><span class="t">10:04</span></div>
+              <div class="text">Of the 3 burner accounts seized in the Park ○○ case, 2 are withdrawing from the same ATM cluster. The money-flow patterns look similar — could someone take a look?</div>
+            </div>
+          </div>
+
+          <div class="msg">
+            <div class="av a-2">L</div>
+            <div>
+              <div class="head"><span class="who">Lee Ji-won Lieutenant</span><span class="t">10:06</span></div>
+              <div class="text">Please check the data. I'm drafting the warrant request — listening in 🙏</div>
+            </div>
+          </div>
+
+          <div class="msg">
+            <div class="av a-me">J</div>
+            <div>
+              <div class="head"><span class="who">Jang Ji-hoon Lieutenant ()</span><span class="t">10:07</span></div>
+              <div class="text"><span class="mention">@AccountTrace</span> Analyze the common money-flow pattern across these 3 burner accounts. Warrant: 2026-Cyber-0418.</div>
+              <div style="margin-top:6px;display:flex;gap:6px;">
+                <span style="background:#ecedf3;border-radius:6px;padding:5px 8px;font-size:11px;color:#4a4a52;">📎 CDR_burner_3.csv</span>
+                <span style="background:#ecedf3;border-radius:6px;padding:5px 8px;font-size:11px;color:#4a4a52;">📎 transactions.xls</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="msg">
+            <div class="av bot">🤖</div>
+            <div>
+              <div class="head"><span class="who">AccountTrace</span><span class="tag">Agent</span><span class="t">10:08</span></div>
+              <div class="text">warrant(2026-Cyber-0418) scope confirmed ✓ · 3 Analyzing 1,284 transactions across the accounts.</div>
+              <div class="bot-card">
+                <div class="hd"><span style="color:var(--accent);">▼</span><b>Common Money Flow — 3-account crossing</b></div>
+                <div class="bd">
+                  <table>
+                    <thead><tr><th>Intermediate Acct</th><th>Hops</th><th>Total</th><th>Final Dest</th></tr></thead>
+                    <tbody>
+                      <tr><td>KB 9*4</td><td>3 / 3</td><td>₩ 42M</td><td>USDT</td></tr>
+                      <tr><td>Toss 1*7</td><td>2 / 3</td><td>₩ 28M</td><td>Kim ○○</td></tr>
+                      <tr><td>Saemaul 2*2</td><td>2 / 3</td><td>₩ 12M</td><td>Anonymous</td></tr>
+                    </tbody>
+                  </table>
+                  <div style="margin-top:8px;font-size:11.5px;color:#4a4a52;line-height:1.5;">
+                    <b>Pattern:</b> All 3 accounts transfer the full amount to <b>KB 9*4</b> within 12 hours of deposit. Same mobile token fingerprint (SHA: 8f2a…) observed 4 times.
+                  </div>
+                </div>
+                <div class="ft">
+                  <button class="btn-mini primary">Continue in thread</button>
+                  <button class="btn-mini">Expand table</button>
+                  <button class="btn-mini">Audit Log ↗</button>
+                  <span style="margin-left:auto;">Sources: KOR-FIN, Warrant §3.2 [1][2]</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="msg">
+            <div class="av a-1">C</div>
+            <div>
+              <div class="head"><span class="who">Choi Min-ho Lieutenant</span><span class="t">10:08</span></div>
+              <div class="text">KB 9*4 hub. Lee Ji-won Lieutenant,  account too warrant include in scope?? <span class="mention">@LawSearch</span> Find precedent for applying §13 proviso when expanding a warrant.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="comp">
+          <div class="box">
+            <span style="color:#8e8e93;">+</span>
+            <input value="@" />
+            <span style="color:var(--accent);font-weight:700;">@</span>
+            <div class="send-pill"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="m2.5 8 11-5.5L11 13l-2.5-4.5L4 6.5l9-4"/></svg></div>
+          </div>
+          <div style="background:#1a1320;border-radius:10px;margin-top:8px;padding:8px;font-size:11.5px;color:#d8dde6;">
+            <div style="color:#8e95a8;font-size:10px;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:4px;">Mentions (@)</div>
+            <div style="padding:6px 8px;border-radius:6px;background:rgba(255,255,255,0.06);display:flex;gap:8px;align-items:center;">
+              <span style="color:var(--gold);">🤖</span><b style="color:#fff;">@AccountTrace</b><span style="color:#8e95a8;margin-left:auto;">just now Use</span>
+            </div>
+            <div style="padding:6px 8px;border-radius:6px;display:flex;gap:8px;align-items:center;">
+              <span>⚖️</span><b style="color:#fff;">@LawSearch</b><span style="color:#8e95a8;margin-left:auto;">frequent</span>
+            </div>
+            <div style="padding:6px 8px;border-radius:6px;display:flex;gap:8px;align-items:center;">
+              <span>🚗</span><b style="color:#fff;">@VehicleLookup</b>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="anno"><b>@ mention</b>invokes bots like people → Conversation context understanding tables · summaries to response. at the bottom of the result card <b>"Continue in thread"</b> as follow-up tasks -ly thread isolated.</div>
+  </div>
+
+  <!-- ============================================================
+       PHONE 3 — Scene 2: Proactive Push Alert
+       ============================================================ -->
+  <div class="scene-col">
+    <div class="scene-label"><div class="num">03</div><div><div class="ttl">Proactive Alerts · narcotics trend detect</div><div class="sub">Agent reach out first</div></div></div>
+    <span class="scene-tag">Scenario 2 · Event-driven</span>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="screen" style="background:#000;">
+        <div class="status dark"><div class="time">03:42</div><div class="right"><span>5G</span><span class="signal"><i style="height:4px;"></i><i style="height:6px;"></i><i style="height:8px;"></i><i style="height:10px;"></i></span><span class="battery"><i></i></span></div></div>
+
+        <div class="lock-bg"></div>
+        <div class="lock-content">
+          <div class="lock-time">
+            <div class="h">3:42</div>
+            <div class="d">Wednesday, May 20</div>
+          </div>
+
+          <div class="lock-cards">
+            <div style="font-size:11px;color:#8e95a8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;padding-left:4px;">Notifications</div>
+
+            <div class="push">
+              <div class="app-ic urgent">P!</div>
+              <div>
+                <div class="nm">POLTALK · cyber-duty<span class="urgent">Urgent</span></div>
+                <div class="ttl">⚡ Drug Trend Detected — Threshold Exceeded</div>
+                <div class="bd">New slang pattern <b style="color:#fff;">"Blue Bean"</b> observed in Busan & Seoul agencies simultaneously. Last 6h ▲ 4.8x.</div>
+              </div>
+              <div class="t">just now</div>
+            </div>
+
+            <div class="push">
+              <div class="app-ic">P!</div>
+              <div>
+                <div class="nm">POLTALK · @DrugTrendDetect</div>
+                <div class="ttl">Analysis summary posted to the group chat</div>
+                <div class="bd">similar cases 3 · estimated same · Details to see long-press</div>
+              </div>
+              <div class="t">just now</div>
+            </div>
+
+            <div class="push">
+              <div class="app-ic">P!</div>
+              <div>
+                <div class="nm">POLTALK · # narcotics-situation-room</div>
+                <div class="ttl">Park ○○ Director: dawn on-call team calls</div>
+                <div class="bd">related parties 2 messenger verify please.</div>
+              </div>
+              <div class="t">2min ago</div>
+            </div>
+
+            <div class="push" style="opacity:0.85;">
+              <div class="app-ic" style="background:linear-gradient(135deg,#3a3a3f,#1a1a1f);">112</div>
+              <div>
+                <div class="nm">112 Call Center</div>
+                <div class="ttl">New report 2 items</div>
+                <div class="bd">jurisdictional cyber reports auto-classified</div>
+              </div>
+              <div class="t">3min ago</div>
+            </div>
+          </div>
+
+          <div style="text-align:center;color:#8e95a8;font-size:11px;padding:14px 0 8px;">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="vertical-align:middle;margin-right:4px;"><rect x="3" y="6" width="10" height="8" rx="2"/><path d="M5 6V4a3 3 0 0 1 6 0v2"/></svg>
+            Slide to unlock
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="anno"><b>⚡ event-driven · push priority.</b> background monitoring; <b>@DrugTrendDetect</b> threshold exceeded detected group chat analysis summary auto posted + plus lockscreen push. user before asking bots first.</div>
+  </div>
+
+  <!-- ============================================================
+       PHONE 4 — Scene 3: shift handoff
+       ============================================================ -->
+  <div class="scene-col">
+    <div class="scene-label"><div class="num">04</div><div><div class="ttl">@Summarize · shift briefing</div><div class="sub">12hr conversations · files in 1 min</div></div></div>
+    <span class="scene-tag">scenarios 3 · Context handoff</span>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="screen">
+        <div class="status"><div class="time">07:14</div><div class="right"><span>5G</span><span class="signal"><i style="height:4px;"></i><i style="height:6px;"></i><i style="height:8px;"></i><i style="height:10px;"></i></span><span class="battery"><i></i></span></div></div>
+
+        <div class="ch-head navy">
+          <svg class="back" width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 3 5 8l5 5"/></svg>
+          <div style="width:28px;height:28px;background:#243c66;border-radius:6px;display:grid;place-items:center;font-size:14px;flex:0 0 28px;">🔔</div>
+          <div class="nm"><b># cyber-duty</b><small>Members 12 · Bots 4</small></div>
+          <div class="actions">
+            <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 8s2-4 6-4 6 4 6 4-2 4-6 4-6-4-6-4Z"/><circle cx="8" cy="8" r="2"/></svg>
+            <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="3" cy="8" r="1.2"/><circle cx="8" cy="8" r="1.2"/><circle cx="13" cy="8" r="1.2"/></svg>
+          </div>
+        </div>
+
+        <div class="body">
+          <div class="system-block">
+            <span class="ic">📌</span>
+            <div>Day shift: <b>Jang Ji-hoon (Cyber Investigation Unit)</b> · overall 7 receive — from the night shift (19~07) receivereceive.</div>
+          </div>
+
+          <div class="msg">
+            <div class="av a-me">J</div>
+            <div>
+              <div class="head"><span class="who">Jang Ji-hoon Lieutenant ()</span><span class="t">07:13</span></div>
+              <div class="text"><span class="mention">@Summarize</span> overnight(19~07)  Channels scenario handoffuse to brief me. unresolved action items too all included.</div>
+            </div>
+          </div>
+
+          <div class="msg">
+            <div class="av bot">🤖</div>
+            <div>
+              <div class="head"><span class="who">summary</span><span class="tag">Agent</span><span class="t">07:14</span></div>
+              <div class="text">past 12hour Messages <b>284 items</b>, Attach <b>8</b>, bot responses <b>14</b> organized.</div>
+
+              <div class="bot-card" style="border-left-color:#0e1d3b;">
+                <div class="hd"><b>📋 Night Briefing · 2026-05-19 19 → 05-20 07</b></div>
+                <div class="bd">
+                  <div style="font-weight:700;color:#1a1a1a;margin-bottom:4px;font-size:12px;">⚡ Major Events</div>
+                  <ol style="margin:0 0 10px;padding-left:18px;color:#4a4a52;font-size:12px;line-height:1.6;">
+                    <li><b style="color:#111;">03:42</b> @DrugTrendDetect — "Blue Bean" pattern exceeded. Busan, Seoul observed simultaneously.</li>
+                    <li><b style="color:#111;">22:48</b> SNS threat posts #2026-118 cluster C-α trace in progress (in charge: Park Seo-yeon overtime).</li>
+                    <li><b style="color:#111;">19:30</b> Register to KICS 5 (Lee Ji-won Lieutenant, all PII verified, pass).</li>
+                  </ol>
+
+                  <div style="font-weight:700;color:#1a1a1a;margin-bottom:4px;font-size:12px;">✅ receiveone action items (3)</div>
+                  <ul style="margin:0 0 10px;padding-left:18px;color:#4a4a52;font-size:12px;line-height:1.65;">
+                    <li><b style="color:var(--red);">[09 deadline]</b> Narcotics TF Director briefing — send night cluster document</li>
+                    <li><b style="color:var(--amber);">[10]</b> warrant request (#2026-Cyber-0418 extend) — Legal Team times's</li>
+                    <li>Park Seo-yeon Sergeant 23:40load memo — next day Statement supplement (#21-403)</li>
+                  </ul>
+
+                  <div style="font-weight:700;color:#1a1a1a;margin-bottom:4px;font-size:12px;">📎 reference attachments</div>
+                  <div style="display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:#4a4a52;">
+                    <span>· narcotics_slang_observed_table.csv (3:42)</span>
+                    <span>· SNS_cluster_C-α.png (22:51)</span>
+                    <span>· Statement audio_21-403.wav (23:40)</span>
+                  </div>
+                </div>
+                <div class="ft">
+                  <button class="btn-mini primary">action items → My tasks</button>
+                  <button class="btn-mini">PDF Save</button>
+                  <span style="margin-left:auto;">Confidence 92% · Verified available</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="msg">
+            <div class="av a-me">J</div>
+            <div>
+              <div class="head"><span class="who">Jang Ji-hoon Lieutenant ()</span><span class="t">07:15</span></div>
+              <div class="text">Thanks. Narcotics TF document before 9 will organize 🙏 Park Seo-yeon Sergeant rest well!</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="comp">
+          <div class="box">
+            <span style="color:#8e8e93;font-size:18px;">+</span>
+            <input placeholder="Messages send" />
+            <span style="color:#8e8e93;">😀</span>
+            <span style="color:#8e8e93;">🎙</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="anno"><b>⟳ Context handoff.</b> night shift 12hourmeasure Conversation·HWP Attach·unresolved job <b>structured briefing</b> as. action items <b>"My tasks" as 1-tap register</b> Next shifter's First 1min becomes lighter.</div>
+  </div>
+
+  <!-- ============================================================
+       PHONE 5 — Scene 4: Data Gatekeeper
+       ============================================================ -->
+  <div class="scene-col">
+    <div class="scene-label"><div class="num">05</div><div><div class="ttl">Data Gatekeeper</div><div class="sub">Register to KICS just before auto review</div></div></div>
+    <span class="scene-tag">Scenario 4 · Invisible QA</span>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="screen">
+        <div class="status"><div class="time">11:24</div><div class="right"><span>5G</span><span class="signal"><i style="height:4px;"></i><i style="height:6px;"></i><i style="height:8px;"></i><i style="height:10px;"></i></span><span class="battery"><i></i></span></div></div>
+
+        <div class="ch-head navy">
+          <svg class="back" width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 3 5 8l5 5"/></svg>
+          <div style="width:28px;height:28px;background:#7a4a2a;border-radius:6px;display:grid;place-items:center;font-size:14px;flex:0 0 28px;">L</div>
+          <div class="nm"><b>Lee Ji-won Lieutenant</b><small>Major Crimes Unit · Active</small></div>
+          <div class="actions">
+            <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 5a2 2 0 0 1 2-2h2l1 3-1 1a8 8 0 0 0 4 4l1-1 3 1v2a2 2 0 0 1-2 2A10 10 0 0 1 2 5Z"/></svg>
+          </div>
+        </div>
+
+        <div class="body">
+          <div class="msg">
+            <div class="av a-2">L</div>
+            <div>
+              <div class="head"><span class="who">Lee Ji-won Lieutenant</span><span class="t">11:18</span></div>
+              <div class="text">I've finished drafting the case report for 2025-Fraud-2231. Could you take a quick look!</div>
+              <div style="margin-top:6px;background:#fff;border:1px solid #ecedf3;border-radius:8px;padding:10px;display:flex;gap:10px;align-items:center;">
+                <div style="width:36px;height:36px;background:#fef2f0;color:#c45c2a;border-radius:6px;display:grid;place-items:center;flex:0 0 36px;font-weight:700;font-size:11px;">HWP</div>
+                <div>
+                  <div style="font-weight:600;font-size:12.5px;">investigation_result_report_2025-Fraud-2231.hwp</div>
+                  <div style="color:#8e8e93;font-size:11px;margin-top:1px;">2.4 MB · 8pages</div>
+                </div>
+              </div>
+              <div style="margin-top:8px;display:flex;gap:6px;">
+                <button style="flex:1;padding:8px 12px;background:var(--navy-700);color:white;border:0;border-radius:8px;font-size:12.5px;font-weight:600;">📤 Register to KICS</button>
+                <button style="padding:8px 14px;background:#ecedf3;color:#1a1a1a;border:0;border-radius:8px;font-size:12.5px;">Approval Line</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="msg">
+            <div class="av a-me">J</div>
+            <div>
+              <div class="head"><span class="who">Jang Ji-hoon Lieutenant ()</span><span class="t">11:23</span></div>
+              <div class="text">I'll register it once and review. Send it!</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Gatekeeper bottom sheet -->
+        <div class="sheet-backdrop"></div>
+        <div class="sheet">
+          <div class="grip"></div>
+          <h3>🛡️ Data quality review · <span style="color:var(--amber);">Improvements recommended</span></h3>
+          <p class="sub">Before registering to KICS, <b>@DataQuality</b> Agent Report review. integrity verified Data only legacy DB as flows.</p>
+
+          <div class="field">
+            <div class="ic ok">✓</div>
+            <div><b>Metadata integrity</b> · Case # · Statute notation · Case type ─ PASS</div>
+          </div>
+          <div class="field">
+            <div class="ic ok">✓</div>
+            <div><b>Law citation Verified</b> · Criminal Procedure §215, Comm. Privacy §13 ─ VALID</div>
+          </div>
+          <div class="field" style="background:#fff8e6;border:1px solid #ffd97a;">
+            <div class="ic warn">!</div>
+            <div><b>Suspect identity metadata missing</b> · Report §3 — table structure's <b>masked RRN · contact</b> fields are empty. Auto-fill?</div>
+          </div>
+          <div class="field" style="background:#fff8e6;border:1px solid #ffd97a;">
+            <div class="ic warn">!</div>
+            <div><b>"electronic records whole" phrase</b> · p.4 seizure target — limitation recommended per Supreme Court 2023-Do-12345 (KICS classification rejections already accumulated).</div>
+          </div>
+          <div class="field">
+            <div class="ic ok">✓</div>
+            <div><b>PII Auto-masking</b> · External-disclosure masking complete</div>
+          </div>
+
+          <div style="background:#f7f8fc;border-radius:8px;padding:10px 12px;margin-top:6px;font-size:11.5px;color:#4a4a52;line-height:1.55;">
+            <b style="color:#111;">💬 If you register as-is?</b><br/>
+            past 6 months same pattern example <b>14 items</b> KICS classifier stage at Rejectedhas been. fixing now saves an average of 1.4 days.
+          </div>
+
+          <div style="display:flex;gap:8px;margin-top:14px;">
+            <button style="flex:1;padding:11px;background:var(--navy-700);color:white;border:0;border-radius:8px;font-weight:600;font-size:13px;">auto supplement → re-review</button>
+            <button style="padding:11px 14px;background:#ecedf3;color:#1a1a1a;border:0;border-radius:8px;font-size:13px;">Register as-is</button>
+          </div>
+          <div style="text-align:center;font-size:10.5px;color:#8e8e93;margin-top:8px;">⚠ review wholeregister Audit Log remain</div>
+        </div>
+      </div>
+    </div>
+    <div class="anno"><b>✓ gatekeeper.</b> "Register to KICS" tab just before, bots <b>metadata·Law citation·PII</b> 3-pass review. cumulative rejection cases — easy to decide <b>"If you register as-is?"</b> signal sends.</div>
+  </div>
+
+  <!-- ============================================================
+       PHONE 6 — Store → messenger Install
+       ============================================================ -->
+  <div class="scene-col">
+    <div class="scene-label"><div class="num">06</div><div><div class="ttl">Store → messenger Install</div><div class="sub">Viral across 140k officers</div></div></div>
+    <span class="scene-tag">Convergence · Self-grown AI ecosystem</span>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="screen">
+        <div class="status"><div class="time">12:32</div><div class="right"><span>5G</span><span class="signal"><i style="height:4px;"></i><i style="height:6px;"></i><i style="height:8px;"></i><i style="height:10px;"></i></span><span class="battery"><i></i></span></div></div>
+
+        <div class="app-top navy">
+          <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 3 5 8l5 5"/></svg>
+          <div class="ws-name" style="margin-left:4px;"><b>Agent Directory</b><small>Store 218 · My messenger Install</small></div>
+          <button class="ic-btn"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 3h12l-4.5 6V14L6.5 12V9L2 3Z"/></svg></button>
+        </div>
+
+        <div class="body">
+          <div class="search-bar">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="4.5"/><path d="m13.5 13.5-3-3"/></svg>
+            Agent·feature Search
+          </div>
+
+          <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;">
+            <span style="background:var(--navy-700);color:white;font-size:11px;padding:4px 10px;border-radius:999px;font-weight:600;">All 218</span>
+            <span style="background:#ecedf3;color:#4a4a52;font-size:11px;padding:4px 10px;border-radius:999px;">🔥 Popular</span>
+            <span style="background:#ecedf3;color:#4a4a52;font-size:11px;padding:4px 10px;border-radius:999px;">My dept</span>
+            <span style="background:#ecedf3;color:#4a4a52;font-size:11px;padding:4px 10px;border-radius:999px;">🆕 New</span>
+          </div>
+
+          <div style="font-size:11px;color:#8e8e93;text-transform:uppercase;letter-spacing:0.04em;font-weight:700;margin-bottom:8px;">🏆 Cyber Investigation Unit Recommended</div>
+
+          <div class="dir-card">
+            <div class="ic" style="background:#fef2f0;color:#c45c2a;">💰</div>
+            <div>
+              <div class="nm">AccountTrace<span class="v">v1.4</span></div>
+              <div class="by">Choi Min-ho · Cyber Investigation Unit</div>
+              <div class="stats"><span>👥 142</span><span>★ 4.8</span><span>🔥 Weekly #3</span></div>
+            </div>
+            <button class="add">+ Add</button>
+          </div>
+
+          <div class="dir-card">
+            <div class="ic" style="background:#e8efff;color:var(--navy-700);">⚡</div>
+            <div>
+              <div class="nm">Narcotics Trend Detect<span class="v">v0.9</span></div>
+              <div class="by">Park Seo-yeon · Cyber Investigation Unit</div>
+              <div class="stats"><span>👥 88</span><span>★ 4.7</span><span>🆕 New</span></div>
+            </div>
+            <button class="add">+ Add</button>
+          </div>
+
+          <div class="dir-card">
+            <div class="ic" style="background:#e6f5ea;color:#1a6f30;">📋</div>
+            <div>
+              <div class="nm">summary<span class="v">v3.2</span></div>
+              <div class="by">systems based</div>
+              <div class="stats"><span>👥 1,420</span><span>★ 4.9</span><span>🏆 Hall of Fame</span></div>
+            </div>
+            <button class="add installed">Install</button>
+          </div>
+
+          <div class="dir-card">
+            <div class="ic" style="background:#fff4cc;color:#b68800;">🛡️</div>
+            <div>
+              <div class="nm">Dataquality<span class="v">v2.1</span></div>
+              <div class="by">IT Planning Bureau</div>
+              <div class="stats"><span>👥 412</span><span>★ 4.6</span><span>systems-based</span></div>
+            </div>
+            <button class="add installed">Install</button>
+          </div>
+
+          <div class="dir-card">
+            <div class="ic" style="background:#f1e9ff;color:#5e3aa8;">🚗</div>
+            <div>
+              <div class="nm">vehicle lookup<span class="v">v3.0</span></div>
+              <div class="by">Jang Ji-hoon · Cyber Investigation Unit</div>
+              <div class="stats"><span>👥 62</span><span>★ 4.9</span><span>🔥 Weekly #1</span></div>
+            </div>
+            <button class="add installed">Install</button>
+          </div>
+
+          <div style="margin-top:14px;background:linear-gradient(135deg,#fff8e6,#fff);border:1px solid #ffd97a;border-radius:10px;padding:12px;display:flex;gap:10px;align-items:center;">
+            <div style="font-size:22px;">🚀</div>
+            <div style="flex:1;font-size:12px;line-height:1.5;color:#4a3000;">
+              <b style="color:#111;">Agents I made too released</b><br/>
+              "My Workspace"'s Agent directory upload. colleagues time's add to group chats.
+            </div>
+          </div>
+        </div>
+
+        <div class="tabs">
+          <div class="tab"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11h2v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9h2L12 2z"/></svg>Home</div>
+          <div class="tab"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-5 4z"/></svg>DM</div>
+          <div class="tab on"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="9" r="3"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg>bots</div>
+          <div class="tab"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Activity</div>
+          <div class="tab"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>More</div>
+        </div>
+      </div>
+    </div>
+    <div class="anno"><b>★ Store ↔ messenger fusion.</b> "+ Add" one-tap Dept group chat·Personal DM bots become coworkers. 30 agents made <b>140k officers</b>'s messenger on viral spread — self-sustaining AI ecosystem's entrypoint.</div>
+  </div>
+
+  <!-- ============================================================
+       PHONE 7 — Scene 5: Temp chat (Ephemeral)
+       ============================================================ -->
+  <div class="scene-col">
+    <div class="scene-label"><div class="num">07</div><div><div class="ttl">Temp chat</div><div class="sub">session ends → auto-destroyed · Audit log only</div></div></div>
+    <span class="scene-tag">Scenario 5 · Info leak blocked</span>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="screen">
+        <div class="status"><div class="time">14:02</div><div class="right"><span>5G</span><span class="signal"><i style="height:4px;"></i><i style="height:6px;"></i><i style="height:8px;"></i><i style="height:10px;"></i></span><span class="battery"><i></i></span></div></div>
+
+        <div class="ch-head" style="background:#1a1320;">
+          <svg class="back" width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 3 5 8l5 5"/></svg>
+          <div style="width:28px;height:28px;background:#3a2a1a;border-radius:6px;display:grid;place-items:center;font-size:14px;flex:0 0 28px;">🔒</div>
+          <div class="nm">
+            <b>temproom · Informant A
+              <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 7V5a4 4 0 0 1 8 0v2"/><rect x="3" y="7" width="10" height="7" rx="1.5"/></svg>
+            </b>
+            <small>2 · closed then disappears · screenshot blocked</small>
+          </div>
+          <div class="actions">
+            <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>
+          </div>
+        </div>
+
+        <div class="ephemeral-banner">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 2h6l-1 4-2 2 2 2 1 4H5l1-4 2-2-2-2Z"/></svg>
+          <span> Conversation <b>session ended  auto destroy</b>; , Attach·summary Savenot.audit log only remains.</span>
+          <span class="timer">⏱ 02:47:12</span>
+        </div>
+
+        <div class="body ephemeral-bg">
+          <div class="day-divider">room generate · 14</div>
+
+          <div class="msg ephemeral">
+            <div class="av" style="background:linear-gradient(135deg,#3a3a3f,#1a1a1f);color:#fff;">A</div>
+            <div>
+              <div class="head"><span class="who">Informant A</span><span class="tag" style="background:#3a3a3f;color:#fff;">Anonymous</span><span class="t">14:01</span></div>
+              <div class="text">Dongtan 2nd District cafe alleyway, every weekday around 23:00 vehicle arrives. plate part 71**4 samebut I'm not sure. My identity must never be exposed .</div>
+            </div>
+          </div>
+
+          <div class="msg ephemeral">
+            <div class="av a-me">J</div>
+            <div>
+              <div class="head"><span class="who">Jang Ji-hoon Lieutenant ()</span><span class="t">14:02</span></div>
+              <div class="text">Thanks.  It's a temp room, so records disappear when it ends. just verify — vehicle color remember?</div>
+            </div>
+          </div>
+
+          <div class="msg ephemeral">
+            <div class="av bot">🤖</div>
+            <div>
+              <div class="head"><span class="who">summary</span><span class="tag">Agent</span><span class="tag gold">temproom mode</span><span class="t">14:02</span></div>
+              <div class="text" style="background:#fffaeb;border-color:#ffd97a;">
+                ⚠ <b>temproom guide</b><br/>
+                 analysis in temp <b>volatile</b>. When chat closes, everything disappears; document save to KICS/drive is disabled. <b>Names·RRN·account numbers</b> are auto-masked on input.
+              </div>
+            </div>
+          </div>
+
+          <div class="msg ephemeral">
+            <div class="av" style="background:linear-gradient(135deg,#3a3a3f,#1a1a1f);color:#fff;">A</div>
+            <div>
+              <div class="head"><span class="who">Informant A</span><span class="t">14:03</span></div>
+              <div class="text">black SUVwas. and <span style="background:#1a1a1a;color:#1a1a1a;border-radius:2px;padding:0 4px;">[auto masking]</span> — I often saw a person.</div>
+              <div style="margin-top:4px;font-size:10.5px;color:#8e8e93;display:flex;gap:4px;align-items:center;">
+                <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 8a5 5 0 0 1 10 0v5L8 11l-5 2Z"/></svg>
+                temp DLP auto-masking · invisible to both sides
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="comp" style="background:#1a1320;border-top:1px dashed #4a3a26;">
+          <div class="box" style="background:#2a1f30;">
+            <span style="color:#8e95a8;">🔒</span>
+            <input placeholder="Messages are not saved" style="color:#fff;" />
+            <span style="color:#ffd97a;font-size:10px;">No recovery after destruction</span>
+            <div class="send-pill"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="m2.5 8 11-5.5L11 13l-2.5-4.5L4 6.5l9-4"/></svg></div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:8px;font-size:10.5px;color:#8e95a8;justify-content:space-between;align-items:center;">
+            <span>📵 Screenshots/copies blocked</span>
+            <span>🚫 KICS·drive disconnected</span>
+            <span>📜 Audit log only</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="anno"><b>⌛ Volatile chat.</b> Informant protection, undetermined cases, civic-sensitivity scenarios. On close, body, attachments, and bot responses are all destroyed; only the audit log (who/when/how long) remains. Names/RRN input are auto-masked on both sides instantly.</div>
+  </div>
+
+  <!-- ============================================================
+       PHONE 8 — Scene 6: calendar · schedule auto + meeting rooms auto reserved
+       ============================================================ -->
+  <div class="scene-col">
+    <div class="scene-label"><div class="num">08</div><div><div class="ttl">@schedule · meeting rooms auto reserved</div><div class="sub">Team calendar cross → slots → roomuntil</div></div></div>
+    <span class="scene-tag">Scenario 6 · Schedule Orchestration</span>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="screen">
+        <div class="status"><div class="time">10:32</div><div class="right"><span>5G</span><span class="signal"><i style="height:4px;"></i><i style="height:6px;"></i><i style="height:8px;"></i><i style="height:10px;"></i></span><span class="battery"><i></i></span></div></div>
+
+        <div class="ch-head navy">
+          <svg class="back" width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 3 5 8l5 5"/></svg>
+          <div style="width:28px;height:28px;background:#243c66;border-radius:6px;display:grid;place-items:center;font-size:14px;flex:0 0 28px;">📞</div>
+          <div class="nm"><b># voice-phishing-TF</b><small>members 8 · bots 3</small></div>
+          <div class="actions">
+            <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="3" cy="8" r="1.2"/><circle cx="8" cy="8" r="1.2"/><circle cx="13" cy="8" r="1.2"/></svg>
+          </div>
+        </div>
+
+        <div class="body">
+          <div class="msg">
+            <div class="av a-me">J</div>
+            <div>
+              <div class="head"><span class="who">Jang Ji-hoon Lieutenant ()</span><span class="t">10:30</span></div>
+              <div class="text"><span class="mention">@schedule</span> This Week inside warrant Review meeting find. Members: <span class="mention">@Choi Min-ho</span> <span class="mention">@Lee Ji-won</span> <span class="mention">@Park Seo-yeon</span> . 1 hour, available slotsw morning. meeting rooms toofind together.</div>
+            </div>
+          </div>
+
+          <div class="msg">
+            <div class="av bot">🤖</div>
+            <div>
+              <div class="head"><span class="who">schedule</span><span class="tag">Agent</span><span class="t">10:31</span></div>
+              <div class="text">Cross-checked 4 attendees' calendars and dept regular schedules. This week's open slots:</div>
+
+              <div class="bot-card">
+                <div class="hd"><b>📅 This Week · 5/19 ~ 5/23 availability</b></div>
+                <div class="bd">
+                  <div class="cal-grid">
+                    <div class="h"></div>
+                    <div class="h"> 19</div>
+                    <div class="h">Wed 20</div>
+                    <div class="h">Thu 21</div>
+                    <div class="h">Fri 22</div>
+                    <div class="h">23</div>
+
+                    <div class="t">09</div>
+                    <div class="busy"></div>
+                    <div class="slot">A</div>
+                    <div class="busy"></div>
+                    <div></div>
+                    <div></div>
+
+                    <div class="t">10</div>
+                    <div class="mine">current</div>
+                    <div class="slot pick">B</div>
+                    <div class="busy"></div>
+                    <div class="slot">C</div>
+                    <div></div>
+
+                    <div class="t">11</div>
+                    <div class="busy"></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+
+                    <div class="t">14</div>
+                    <div></div>
+                    <div></div>
+                    <div class="busy"></div>
+                    <div></div>
+                    <div></div>
+
+                    <div class="t">15</div>
+                    <div></div>
+                    <div class="busy"></div>
+                    <div class="busy"></div>
+                    <div></div>
+                    <div></div>
+                  </div>
+
+                  <div style="margin-top:10px;display:flex;flex-direction:column;gap:0;">
+                    <div class="slot-chip">
+                      <span class="ts">A · Wed 09</span>
+                      <span class="meta">— 1hour</span>
+                      <span class="conflict warn">Park Seo-yeon 09:30~ field work</span>
+                    </div>
+                    <div class="slot-chip pick">
+                      <span class="ts">B · Wed 10 ⭐</span>
+                      <span class="meta">— 1hour</span>
+                      <span class="conflict">4 all available</span>
+                    </div>
+                    <div class="slot-chip">
+                      <span class="ts">C · Fri 10</span>
+                      <span class="meta">— 1hour</span>
+                      <span class="conflict">4 all available</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="ft">
+                  <button class="btn-mini primary">Confirm B</button>
+                  <button class="btn-mini">other wk</button>
+                  <span style="margin-left:auto;">⭐ Recommended: deadline-imminent order</span>
+                </div>
+              </div>
+
+              <div class="bot-card" style="border-left-color:#5e3aa8;margin-top:10px;">
+                <div class="hd"><b>🏢 meeting rooms auto reserved — B slots basis</b></div>
+                <div class="bd">
+                  <div class="room-card picked">
+                    <div class="ic">🏢</div>
+                    <div>
+                      <div class="nm">Cyber Investigation Unit meeting rooms 2</div>
+                      <div class="sub">6 seats · monitor·HDMI · 5F · secure room</div>
+                    </div>
+                    <span class="badge-ok">instantly available</span>
+                  </div>
+                  <div class="room-card">
+                    <div class="ic" style="background:#fef2f0;color:#c45c2a;">🎥</div>
+                    <div>
+                      <div class="nm">currencymeeting rooms A</div>
+                      <div class="sub">seats 4 · 4K camera · this office 7F</div>
+                    </div>
+                    <span class="badge-ok">available</span>
+                  </div>
+                  <div class="room-card">
+                    <div class="ic" style="background:#ecedf3;color:#8e8e93;">🏢</div>
+                    <div>
+                      <div class="nm">Major Crimes Unit small meeting room</div>
+                      <div class="sub">seats 4 · other Dept · 09:50untilonly</div>
+                    </div>
+                    <span style="font-size:10px;color:var(--amber);font-weight:600;">Art itemsload</span>
+                  </div>
+                </div>
+                <div class="ft">
+                  <button class="btn-mini primary">B + meeting rooms2 confirmed</button>
+                  <button class="btn-mini">calendar ↗</button>
+                  <span style="margin-left:auto;">auto invitations + video link send</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="msg">
+            <div class="av a-me">J</div>
+            <div>
+              <div class="head"><span class="who">Jang Ji-hoon Lieutenant ()</span><span class="t">10:32</span></div>
+              <div class="text">B + meeting rooms 2 as confirmeddo 👍</div>
+            </div>
+          </div>
+
+          <div class="msg">
+            <div class="av bot">🤖</div>
+            <div>
+              <div class="head"><span class="who">schedule</span><span class="tag">Agent</span><span class="t">10:32</span></div>
+              <div class="text">
+                ✅ <b>5/20(Wed) 10~11 · Cyber Investigation Unit meeting rooms 2</b> confirmed.<br/>
+                4 attendees added to calendar · invitations sent · group chat reminder reserved 1hr prior · meeting-notes template generated.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="comp">
+          <div class="box">
+            <span style="color:#8e8e93;font-size:18px;">+</span>
+            <input placeholder="Messages send" />
+            <span style="color:#8e8e93;">😀</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="anno"><b>📅 schedule Orchestration.</b> In one mention: <b>cross-check team calendars → recommended slots → meeting room</b> all at once. field work, regular schedules, and other dept items considered; , on confirm: <b>invitations and meeting-notes temple·push</b> follows.</div>
+  </div>
+
+  <!-- ============================================================
+       PHONE 9 — Scene 7: drive
+       ============================================================ -->
+  <div class="scene-col">
+    <div class="scene-label"><div class="num">09</div><div><div class="ttl">Case drive</div><div class="sub">Case-by-case folders · permission badges · KICS-connected</div></div></div>
+    <span class="scene-tag">scenarios 7 · files Governance</span>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="screen">
+        <div class="status"><div class="time">11:05</div><div class="right"><span>5G</span><span class="signal"><i style="height:4px;"></i><i style="height:6px;"></i><i style="height:8px;"></i><i style="height:10px;"></i></span><span class="battery"><i></i></span></div></div>
+
+        <div class="app-top navy">
+          <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 3 5 8l5 5"/></svg>
+          <div class="ws-name" style="margin-left:4px;"><b>drive</b><small>Case·Share·My files</small></div>
+          <button class="ic-btn"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="4.5"/><path d="m13.5 13.5-3-3"/></svg></button>
+          <button class="ic-btn" style="background:var(--gold);color:#1a1a1a;"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3v10M3 8h10"/></svg></button>
+        </div>
+
+        <div class="body" style="padding-top:10px;">
+          <div class="drive-crumb">
+            <span>drive</span><span class="sep">›</span>
+            <span>Case</span><span class="sep">›</span>
+            <b>2026-Cyber-0418</b>
+            <span style="margin-left:auto;background:#e8efff;color:var(--navy-700);padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;">warrant Connected</span>
+          </div>
+
+          <div style="background:linear-gradient(135deg,#fff8e6,#fff);border:1px solid #ffd97a;border-radius:8px;padding:10px;display:flex;gap:8px;align-items:center;margin-bottom:10px;font-size:11.5px;color:#4a3000;line-height:1.5;">
+            <span style="font-size:18px;">🛡</span>
+            <div><b style="color:#111;">Case security stage · S2</b><br/>external network exported  Approval auto routing · watermark auto inserted</div>
+          </div>
+
+          <div style="font-size:11px;color:#8e8e93;text-transform:uppercase;letter-spacing:0.04em;font-weight:700;margin:8px 0 4px;">folder</div>
+
+          <div class="drive-row">
+            <div class="fi folder">📁</div>
+            <div>
+              <div class="nm">01_investigationReport</div>
+              <div class="sub"><span>14 items</span><span>· Lee Ji-won</span></div>
+            </div>
+            <span class="perm write">Edit</span>
+          </div>
+          <div class="drive-row">
+            <div class="fi folder">📁</div>
+            <div>
+              <div class="nm">02_evidencedocument · warrant</div>
+              <div class="sub"><span>38 items</span><span>· locked</span></div>
+            </div>
+            <span class="perm secret">audit</span>
+          </div>
+          <div class="drive-row">
+            <div class="fi folder">📁</div>
+            <div>
+              <div class="nm">03_statement_audio</div>
+              <div class="sub"><span>9 items</span><span>· auto-transcribed</span></div>
+            </div>
+            <span class="perm read">lookup</span>
+          </div>
+
+          <div style="font-size:11px;color:#8e8e93;text-transform:uppercase;letter-spacing:0.04em;font-weight:700;margin:14px 0 4px;">Recent files</div>
+
+          <div class="drive-row">
+            <div class="fi hwp">H</div>
+            <div>
+              <div class="nm">investigation_result_report_v3.hwp</div>
+              <div class="sub"><span>Lee Ji-won · 22min ago</span><span>· 8p · 2.4MB</span></div>
+            </div>
+            <span class="perm write">Edit</span>
+          </div>
+          <div class="drive-row">
+            <div class="fi xls">X</div>
+            <div>
+              <div class="nm">CDR_burner_3.csv</div>
+              <div class="sub"><span>Jang Ji-hoon · 1hr ago</span><span>· 1,284rows</span></div>
+            </div>
+            <span class="perm write">Edit</span>
+          </div>
+          <div class="drive-row">
+            <div class="fi aud">♪</div>
+            <div>
+              <div class="nm">Statement audio_21-403.wav</div>
+              <div class="sub"><span>Park Seo-yeon · Yesterday</span><span>· 12min · auto-transcribed ✓</span></div>
+            </div>
+            <span class="perm read">lookup</span>
+          </div>
+          <div class="drive-row">
+            <div class="fi img">🖼</div>
+            <div>
+              <div class="nm">SNS_cluster_C-α.png</div>
+              <div class="sub"><span>Park Seo-yeon · Yesterday</span><span>· 1.8MB</span></div>
+            </div>
+            <span class="perm read">lookup</span>
+          </div>
+          <div class="drive-row">
+            <div class="fi pdf">P</div>
+            <div>
+              <div class="nm">warrant form_v18.pdf</div>
+              <div class="sub"><span>Legal Team · 2 days ago</span><span>· locked · approval in use</span></div>
+            </div>
+            <span class="perm secret">audit</span>
+          </div>
+
+          <div style="margin-top:12px;padding:10px 12px;background:#f7f8fc;border-radius:8px;font-size:11.5px;color:#4a4a52;display:flex;gap:8px;align-items:center;">
+            <span style="color:var(--accent);">🔗</span>
+            <span><b style="color:#111;">group chat drop</b> permission auto-check — auto-attach watermark/expiry to anonymized files for external members.</span>
+          </div>
+        </div>
+
+        <div class="tabs">
+          <div class="tab"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11h2v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9h2L12 2z"/></svg>Home</div>
+          <div class="tab"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-5 4z"/></svg>DM</div>
+          <div class="tab on"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7h6l2 2h10v10a2 2 0 0 1-2 2H3z"/></svg>drive</div>
+          <div class="tab"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Activity</div>
+          <div class="tab"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>More</div>
+        </div>
+      </div>
+    </div>
+    <div class="anno"><b>📁 Case unit drive.</b> all files <b>case number</b> root-bundled with warrant/KICS and auto-connected. <b>Edit/lookup/audit</b> 3-tier permission badges as at a glance view, group chat to drop  permission·watermark auto-apply.</div>
+  </div>
+
+  <!-- ============================================================
+       PHONE 10 — Scene 8: board / wiki (Notion-style)
+       ============================================================ -->
+  <div class="scene-col">
+    <div class="scene-label"><div class="num">10</div><div><div class="ttl">wiki board</div><div class="sub">Markdown · Notion-style  pages</div></div></div>
+    <span class="scene-tag">Scenario 8 · Living Manual</span>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="screen">
+        <div class="status"><div class="time">15:18</div><div class="right"><span>5G</span><span class="signal"><i style="height:4px;"></i><i style="height:6px;"></i><i style="height:8px;"></i><i style="height:10px;"></i></span><span class="battery"><i></i></span></div></div>
+
+        <div class="app-top navy">
+          <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 3 5 8l5 5"/></svg>
+          <div class="ws-name" style="margin-left:4px;"><b>wiki · board</b><small>Cyber Investigation Unit</small></div>
+          <button class="ic-btn"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 4h12M2 8h12M2 12h8"/></svg></button>
+          <button class="ic-btn"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 13 7 8 2 3M9 13l5-5-5-5"/></svg></button>
+        </div>
+
+        <div class="body" style="padding:12px 14px 14px;">
+          <div class="wiki-crumb">
+            <b>Cyber Investigation Unit</b><span>›</span>
+            <b>work handoff</b><span>›</span>
+            <b>night on-call</b><span>›</span>
+            <span class="here">manual v3</span>
+          </div>
+
+          <div class="wiki-bar">
+            <span class="pill on">Read</span>
+            <span class="pill">Edit (M↓)</span>
+            <span class="pill">history 24</span>
+            <span class="pill" style="margin-left:auto;">⭐ Favorites</span>
+          </div>
+
+          <div class="wiki">
+            <span class="icon-emoji">🌙</span>
+            <h1>night on-call handoff manual v3</h1>
+
+            <dl class="props">
+              <dt>👤 owner</dt><dd>Park Seo-yeon Sergeant</dd>
+              <dt>🏷 Tags</dt><dd>#handoff #on-call #SOP</dd>
+              <dt>🕒 fix</dt><dd>3hr ago · Jang Ji-hoon</dd>
+              <dt>👀 subscribers</dt><dd>14 people</dd>
+            </dl>
+
+            <div class="callout">
+              <span class="em">💡</span>
+              <div><b>Page goal.</b> Cyber Investigation Unit night shifters can follow within 10 minutes of handover. On process change, fix via PR → auto-notify.</div>
+            </div>
+
+            <h2>1. Post-handover checklist</h2>
+            <ul>
+              <li>Check pinned messages in <b># cyber-duty</b></li>
+              <li><code>@Summarize</code> calls → night 12hour briefing receive</li>
+              <li>unresolved action items <b>3 above</b>  Director see</li>
+              <li>112 auto classifier queue remaining verify (Thutable 0)</li>
+            </ul>
+
+            <h2>2.  pages</h2>
+            <div class="subpage">
+              <span class="em">📘</span>
+              <div><b>Citizen grade response SOP</b><small>· 4 items</small></div>
+              <span class="arrow">›</span>
+            </div>
+            <div class="subpage">
+              <span class="em">🚨</span>
+              <div><b>Urgent scenario escalation tree</b><small>· Director → Chief</small></div>
+              <span class="arrow">›</span>
+            </div>
+            <div class="subpage">
+              <span class="em">🧭</span>
+              <div><b>how to use weekly agents</b><small>· @AccountTrace other 5</small></div>
+              <span class="arrow">›</span>
+            </div>
+            <div class="subpage">
+              <span class="em">📞</span>
+              <div><b>Contacting related depts · shortcut</b><small>· 24-hour hotline</small></div>
+              <span class="arrow">›</span>
+            </div>
+
+            <h2>3. Frequently used commands</h2>
+            <ul>
+              <li><code>/on-callstart</code> — receive Notifications auto send</li>
+              <li><code>@Summarize 12h</code> — just before 12hour briefing</li>
+              <li><code>/Urgent [grade]</code> — grade- calls</li>
+            </ul>
+
+            <h2>4. change history</h2>
+            <blockquote>
+              v3 · 2026-05-19 — @DrugTrendDetect threshold calls basis Add (Jang Ji-hoon)<br/>
+              v2 · 2026-04-02 — 112 auto classifier queue verify process Add (Park Seo-yeon)
+            </blockquote>
+
+            <div style="margin-top:12px;padding:8px 10px;background:#f7f8fc;border-radius:6px;font-size:11px;color:#8e8e93;display:flex;gap:8px;align-items:center;">
+              <span style="color:var(--accent);">🔗</span>
+              <span>Drop the page into a group chat → auto-generates a preview card · <b style="color:#111;">@page → night on-call</b></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="anno"><b>📒 Wiki board.</b> Written in Markdown, pages link <b>to each other</b> in Notion style. Handoffs, SOPs, and manuals live here; paste them in group chats for <b>preview cards + page-change notifications</b> — manuals are actually "read."</div>
+  </div>
+
+</main>
+
+<script>
+  // theme toggle (light default for canvas-friendly view)
+  const tt = document.getElementById('theme-toggle');
+  const saved = localStorage.getItem('poltalk-theme') || 'light';
+  document.body.setAttribute('data-theme', saved);
+  document.documentElement.setAttribute('data-theme', saved);
+  function setTheme(t) {
+    document.body.setAttribute('data-theme', t);
+    document.documentElement.setAttribute('data-theme', t);
+    localStorage.setItem('poltalk-theme', t);
+    tt.innerHTML = t === 'dark' ?
+      '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="2.5"/><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3 3l1 1M12 12l1 1M3 13l1-1M12 4l1-1"/></svg>' :
+      '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M13 9.5A5.5 5.5 0 1 1 6.5 3 4.5 4.5 0 0 0 13 9.5Z"/></svg>';
+  }
+  setTheme(saved);
+  tt.onclick = () => setTheme(document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+</script>
+
+</body>
+</html>
