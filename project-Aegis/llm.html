@@ -1,0 +1,701 @@
+<!doctype html>
+<html lang="ko" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>LLM 워크스페이스 · 경찰청 AI 통합플랫폼</title>
+<link rel="stylesheet" href="assets/styles.css" />
+<style>
+  body { overflow: hidden; }
+  .llm-app {
+    display: grid;
+    grid-template-columns: 248px 1fr 320px;
+    grid-template-rows: 52px 1fr;
+    grid-template-areas:
+      "topbar topbar topbar"
+      "side   chat   rail";
+    height: 100vh;
+  }
+
+  /* Conversations list */
+  .conv-list { display: flex; flex-direction: column; gap: 2px; padding-top: 4px; }
+  .conv-list .conv {
+    padding: 8px 10px;
+    border-radius: var(--r-md);
+    cursor: pointer;
+    border: 1px solid transparent;
+  }
+  .conv-list .conv:hover { background: var(--panel-2); }
+  .conv-list .conv.active {
+    background: var(--accent-bg); border-color: color-mix(in oklab, var(--accent) 25%, transparent);
+  }
+  .conv-list .title {
+    font-size: 13px; color: var(--text);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .conv-list .meta {
+    font-size: 11px; color: var(--text-mut);
+    display: flex; align-items: center; gap: 6px; margin-top: 2px;
+  }
+  .conv-list .meta .agent { color: var(--accent); font-family: var(--font-mono); font-size: 10.5px; }
+  .conv-list .conv.personal .meta::before {
+    content: "★"; color: var(--gold); margin-right: -2px;
+  }
+
+  /* Chat column */
+  .chat-col {
+    grid-area: chat;
+    display: flex; flex-direction: column;
+    border-right: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .chat-head {
+    padding: 14px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 14px;
+    background: var(--bg-elev);
+  }
+  .chat-head h2 { margin: 0; font-size: 15px; font-weight: 600; }
+  .chat-head .meta-line { font-size: 11px; color: var(--text-mut); margin-top: 2px; }
+  .chat-head .stack { margin-left: auto; display: flex; gap: 6px; align-items: center; }
+  .chat-head .agents-on {
+    display: flex; gap: 6px; align-items: center;
+    padding: 4px 8px;
+    border: 1px solid var(--border-2);
+    border-radius: var(--r-md);
+    font-size: 12px;
+  }
+  .agent-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 1px 6px; border-radius: 4px;
+    font-size: 11px; background: var(--accent-bg); color: var(--accent);
+    font-family: var(--font-mono);
+  }
+
+  .chat-scroll { flex: 1; overflow-y: auto; padding: 28px 80px 24px; }
+  .msg { margin-bottom: 24px; display: flex; gap: 14px; }
+  .msg .avatar {
+    width: 28px; height: 28px; border-radius: 50%;
+    flex: 0 0 28px; display: grid; place-items: center;
+    font-size: 11px; font-weight: 600;
+  }
+  .msg.user .avatar { background: var(--panel-hi); color: var(--text); }
+  .msg.assistant .avatar { background: linear-gradient(135deg, var(--navy-600), var(--navy-800)); color: white; }
+  .msg .body { flex: 1; min-width: 0; }
+  .msg .who {
+    font-size: 12px; color: var(--text-mut);
+    display: flex; gap: 8px; align-items: center;
+    margin-bottom: 6px;
+  }
+  .msg .who .name { color: var(--text); font-weight: 500; }
+  .msg .who .time { margin-left: auto; font-family: var(--font-mono); }
+  .msg .content {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    padding: 14px 16px;
+    font-size: 14px; line-height: 1.65;
+  }
+  .msg.user .content {
+    background: var(--accent-bg);
+    border-color: color-mix(in oklab, var(--accent) 20%, transparent);
+  }
+  .msg .content p { margin: 0 0 6px; }
+  .msg .content p:last-child { margin-bottom: 0; }
+  .msg .content code {
+    font-family: var(--font-mono); font-size: 12px;
+    background: var(--panel-2); padding: 1px 6px; border-radius: 4px;
+  }
+
+  .tool-call {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    margin: 8px 0;
+    font-size: 12.5px;
+    overflow: hidden;
+  }
+  .tool-call .head {
+    display: grid; grid-template-columns: auto 1fr auto;
+    align-items: center; gap: 12px;
+    padding: 10px 14px;
+  }
+  .tool-call .ico-box {
+    width: 28px; height: 28px; border-radius: 6px;
+    background: var(--panel-hi);
+    display: grid; place-items: center;
+    color: var(--accent);
+  }
+  .tool-call .name { font-weight: 500; }
+  .tool-call .sub { color: var(--text-mut); font-size: 11px; margin-top: 1px; }
+  .tool-call .status { font-family: var(--font-mono); font-size: 11px; color: var(--green); }
+  .tool-call .out {
+    border-top: 1px solid var(--border);
+    padding: 10px 14px; font-family: var(--font-mono); font-size: 11.5px;
+    color: var(--text-mut); white-space: pre-wrap;
+    background: var(--bg);
+  }
+
+  .att-img {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--panel-2); border: 1px solid var(--border);
+    padding: 6px 10px 6px 6px;
+    border-radius: var(--r-md); font-size: 12px;
+    margin-bottom: 8px;
+  }
+  .att-img .thumb {
+    width: 28px; height: 28px; border-radius: 4px;
+    background: linear-gradient(135deg, #2a3550, #1a2236);
+    display: grid; place-items: center; color: var(--text-mut);
+  }
+
+  .citations {
+    margin-top: 10px;
+    border-top: 1px dashed var(--border);
+    padding-top: 10px;
+  }
+  .citations .ct-head {
+    font-size: 11px; color: var(--text-mut);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    margin-bottom: 6px;
+  }
+  .citation {
+    display: grid;
+    grid-template-columns: 22px 1fr auto;
+    gap: 10px; align-items: center;
+    padding: 7px 10px;
+    background: var(--panel-2);
+    border-radius: var(--r-md);
+    font-size: 12px;
+    margin-bottom: 4px;
+  }
+  .citation .ix {
+    width: 22px; height: 22px; border-radius: 4px;
+    background: var(--accent-bg); color: var(--accent);
+    display: grid; place-items: center;
+    font-family: var(--font-mono); font-size: 11px;
+  }
+  .citation .src { color: var(--text-mut); font-size: 11px; }
+
+  /* Composer */
+  .composer-wrap { padding: 0 80px 24px; }
+  .composer {
+    border: 1px solid var(--border-2);
+    background: var(--panel);
+    border-radius: var(--r-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .composer .input-row { display: flex; padding: 12px 14px 4px; }
+  .composer textarea {
+    flex: 1; resize: none; border: 0; outline: 0; background: transparent;
+    color: var(--text); font: inherit;
+    font-size: 14px; min-height: 24px; max-height: 120px;
+    font-family: var(--font-sans);
+  }
+  .composer .tools-row {
+    display: flex; align-items: center; gap: 4px;
+    padding: 8px 10px;
+    border-top: 1px solid var(--hairline);
+  }
+  .tool-btn {
+    display: inline-flex; gap: 6px; align-items: center;
+    padding: 4px 8px; border-radius: var(--r-sm);
+    color: var(--text-mut); font-size: 12px;
+    border: 1px solid transparent; background: transparent;
+  }
+  .tool-btn:hover { background: var(--panel-2); color: var(--text); }
+  .tool-btn.on {
+    color: var(--accent); background: var(--accent-bg);
+    border-color: color-mix(in oklab, var(--accent) 25%, transparent);
+  }
+  .composer .right { margin-left: auto; display: flex; gap: 6px; align-items: center; }
+  .composer .model-pick {
+    display: inline-flex; gap: 6px; align-items: center;
+    padding: 4px 10px; border-radius: var(--r-sm);
+    background: var(--panel-2); border: 1px solid var(--border);
+    font-size: 12px; color: var(--text-mut);
+  }
+  .composer .send-btn {
+    width: 32px; height: 32px;
+    background: var(--navy-700); color: white;
+    border: 0; border-radius: var(--r-md);
+    display: grid; place-items: center;
+  }
+
+  /* Right rail */
+  .rail {
+    grid-area: rail;
+    background: var(--bg-elev);
+    overflow-y: auto;
+  }
+  .rail .tabs { display: flex; border-bottom: 1px solid var(--border); }
+  .rail .tabs .tab {
+    flex: 1; padding: 11px 0; text-align: center;
+    font-size: 12px; color: var(--text-mut);
+    border-bottom: 2px solid transparent; cursor: pointer;
+  }
+  .rail .tabs .tab.active { color: var(--text); border-bottom-color: var(--accent); }
+  .rail .pane { padding: 16px 18px; display: none; }
+  .rail .pane.active { display: block; }
+  .rail h5 {
+    margin: 0 0 8px; font-size: 11px; color: var(--text-mut);
+    text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600;
+  }
+
+  .agent-card {
+    padding: 11px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    margin-bottom: 6px;
+    background: var(--panel);
+  }
+  .agent-card.added {
+    border-color: color-mix(in oklab, var(--accent) 40%, transparent);
+    background: linear-gradient(180deg, var(--accent-bg), transparent);
+  }
+  .agent-card .row { align-items: flex-start; gap: 10px; }
+  .agent-card .ico-box {
+    width: 30px; height: 30px; border-radius: 6px;
+    background: var(--panel-2); display: grid; place-items: center;
+    color: var(--accent); flex: 0 0 30px;
+  }
+  .agent-card .name {
+    font-size: 12.5px; font-weight: 500;
+    display: flex; gap: 6px; align-items: center;
+  }
+  .agent-card .desc {
+    font-size: 11.5px; color: var(--text-mut);
+    margin-top: 3px; line-height: 1.5;
+  }
+  .agent-card .toolchain {
+    margin-top: 6px; display: flex; gap: 4px; flex-wrap: wrap;
+  }
+  .agent-card .add-btn {
+    margin-left: auto; flex: 0 0 auto;
+    width: 22px; height: 22px;
+    border-radius: 4px; border: 1px solid var(--border-2);
+    background: var(--panel-2); color: var(--text-mut);
+    display: grid; place-items: center;
+  }
+  .agent-card.added .add-btn {
+    background: var(--accent); border-color: var(--accent); color: white;
+  }
+
+  .src-card {
+    padding: 10px 12px; border: 1px solid var(--border);
+    border-radius: var(--r-md); margin-bottom: 6px;
+    background: var(--panel);
+  }
+  .src-card .head { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+  .src-card .ix {
+    width: 18px; height: 18px; border-radius: 4px;
+    background: var(--accent-bg); color: var(--accent);
+    display: grid; place-items: center;
+    font-family: var(--font-mono); font-size: 10px;
+  }
+  .src-card .snippet {
+    font-size: 11.5px; color: var(--text-mut);
+    margin-top: 6px; line-height: 1.5;
+    border-left: 2px solid var(--border-2);
+    padding-left: 8px;
+  }
+  .src-card .meta { font-size: 10px; color: var(--text-dim); margin-top: 6px; font-family: var(--font-mono);}
+
+  /* Connected systems block */
+  .sys-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 10px; border-bottom: 1px solid var(--hairline);
+    font-size: 12px;
+  }
+  .sys-row:last-child { border-bottom: 0; }
+  .sys-row .name { color: var(--text); }
+  .sys-row .status { margin-left: auto; font-size: 11px; }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="emblem" viewBox="0 0 64 64">
+      <path d="M32 4 L56 12 V30 C56 44 46 54 32 60 C18 54 8 44 8 30 V12 Z" fill="none" stroke="currentColor" stroke-width="2.5" />
+      <path d="M32 22 L34.2 28.5 L41 28.5 L35.4 32.5 L37.6 39 L32 35 L26.4 39 L28.6 32.5 L23 28.5 L29.8 28.5 Z" fill="currentColor" />
+    </symbol>
+  </defs>
+</svg>
+
+<div class="llm-app">
+
+  <header class="topbar">
+    <a href="index.html" class="brand">
+      <svg class="emblem" width="24" height="24" style="color: var(--gold)"><use href="#emblem"/></svg>
+      <div>경찰청 AI <span style="color:var(--text-mut);font-weight:400;">· LLM 워크스페이스</span></div>
+    </a>
+    <div class="crumbs">
+      <span class="sep">/</span><a href="index.html">홈</a>
+      <span class="sep">/</span><span>LLM</span>
+      <span class="sep">/</span><span class="here" id="crumb-here">대화</span>
+    </div>
+    <div class="spacer"></div>
+    <div class="search-mini">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="7" cy="7" r="4.5"/><path d="m13.5 13.5-3-3"/></svg>
+      대화·문서·에이전트 검색<kbd>⌘K</kbd>
+    </div>
+    <button class="icon-btn" id="theme-toggle" title="테마"></button>
+    <button class="icon-btn" title="알림"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 11V7a4 4 0 1 1 8 0v4l1 1.5H3L4 11ZM6.5 12.5a1.5 1.5 0 0 0 3 0"/></svg></button>
+    <div class="user-chip">
+      <div class="avatar">장</div>
+      <div><div class="name">장지훈 경위</div><div class="role">사이버수사대</div></div>
+    </div>
+  </header>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <button class="btn primary" style="justify-content:center; margin: 0 4px 12px;">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 3v10M3 8h10"/></svg>
+      새 대화
+    </button>
+
+    <h6>현재 사건</h6>
+    <div class="conv-list">
+      <div class="conv active" data-conv="vehicle-track">
+        <div class="title">차량 추적 — 7나 1234 사건</div>
+        <div class="meta">방금 · <span class="agent">@차량조회</span></div>
+      </div>
+      <div class="conv" data-conv="cdr-summary">
+        <div class="title">통신 자료 요약 (2026-W19)</div>
+        <div class="meta">11:02 · <span class="agent">@CDR요약 @GraphRAG</span></div>
+      </div>
+      <div class="conv" data-conv="sns-threat">
+        <div class="title">SNS 상 위협 발언 분류</div>
+        <div class="meta">09:34 · <span class="agent">@GraphRAG</span></div>
+      </div>
+    </div>
+
+    <h6>오늘</h6>
+    <div class="conv-list">
+      <div class="conv personal" data-conv="polnet-quokka">
+        <div class="title">폴넷 쿼카짤 쪽지 자동 발송</div>
+        <div class="meta">12:14 · 개인 자동화</div>
+      </div>
+      <div class="conv" data-conv="missing-child">
+        <div class="title">실종아동 진술 요약 — #21-403</div>
+        <div class="meta">13:18 · <span class="agent">@요약 @PII</span></div>
+      </div>
+      <div class="conv" data-conv="warrant-review">
+        <div class="title">압수영장 청구서 양식 검토</div>
+        <div class="meta">09:42 · <span class="agent">@법령검색</span></div>
+      </div>
+      <div class="conv" data-conv="cyber-report">
+        <div class="title">사이버 침해사고 보고서 초안</div>
+        <div class="meta">08:21 · <span class="agent">@보고서작성</span></div>
+      </div>
+    </div>
+
+    <h6>어제</h6>
+    <div class="conv-list">
+      <div class="conv" data-conv="phishing">
+        <div class="title">보이스피싱 패턴 분류기 해설</div>
+        <div class="meta">15:08 · <span class="agent">@분류 @트렌드</span></div>
+      </div>
+    </div>
+
+    <h6>지난 주</h6>
+    <div class="conv-list">
+      <div class="conv" data-conv="missing-child">
+        <div class="title">계좌 거래내역 흐름 추적</div>
+        <div class="meta">월 · <span class="agent">@계좌분석</span></div>
+      </div>
+      <div class="conv" data-conv="phishing">
+        <div class="title">CCTV 시간대 매칭 요청</div>
+        <div class="meta">화 · 8 메시지</div>
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <span>저장공간 12.4GB / 20GB</span>
+      <a href="mlops.html#workspace" style="color:var(--accent);">내 에이전트 ↗</a>
+    </div>
+  </aside>
+
+  <!-- Center: chat -->
+  <section class="chat-col">
+    <div class="chat-head">
+      <div>
+        <h2 id="chat-title">…</h2>
+        <div class="meta-line" id="chat-meta">…</div>
+      </div>
+      <div class="stack">
+        <div class="agents-on" id="chat-agents-on">
+          <span style="color:var(--text-mut)">활성 에이전트</span>
+        </div>
+        <button class="icon-btn" title="공유"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M7 9 9 7M5.5 10.5a2.1 2.1 0 0 1-3-3l2-2a2.1 2.1 0 0 1 3 3M10.5 5.5a2.1 2.1 0 0 1 3 3l-2 2a2.1 2.1 0 0 1-3-3"/></svg></button>
+        <button class="icon-btn" title="더보기"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="3.5" cy="8" r=".8"/><circle cx="8" cy="8" r=".8"/><circle cx="12.5" cy="8" r=".8"/></svg></button>
+      </div>
+    </div>
+
+    <div class="chat-scroll" id="chat-scroll"></div>
+
+    <div class="composer-wrap">
+      <div class="composer">
+        <div class="input-row">
+          <textarea placeholder="대화 입력 — Shift+Enter 줄바꿈 / Enter 전송 / @ 에이전트 호출 / # RAG 출처 지정"></textarea>
+        </div>
+        <div class="tools-row">
+          <button class="tool-btn" title="파일 첨부"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="m13 7-5.5 5.5a3 3 0 0 1-4.2-4.2l6.7-6.7a2 2 0 0 1 2.8 2.8L6.6 11"/></svg> 첨부</button>
+          <button class="tool-btn on"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="6" r="3"/><path d="M2 14c.5-2.5 3-4 6-4s5.5 1.5 6 4"/></svg> <span id="composer-agents">에이전트</span></button>
+          <button class="tool-btn"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 4.5A1.5 1.5 0 0 1 3.5 3h9A1.5 1.5 0 0 1 14 4.5v6a1.5 1.5 0 0 1-1.5 1.5H6l-3 2.5v-2.5A1.5 1.5 0 0 1 2 10.5v-6Z"/></svg> RAG</button>
+          <button class="tool-btn"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 2v3M8 11v3M2 8h3M11 8h3M4 4l2 2M10 10l2 2M4 12l2-2M10 6l2-2"/></svg> 프롬프트</button>
+          <div class="right">
+            <div class="model-pick">
+              <span class="dot green"></span>
+              <span style="color:var(--text)" id="model-name">police-llm-13b</span>
+              <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m3 6 5 4 5-4"/></svg>
+            </div>
+            <button class="send-btn" title="전송"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m2.5 8 11-5.5L11 13l-2.5-4.5L4 6.5l9-4"/></svg></button>
+          </div>
+        </div>
+      </div>
+      <div style="text-align:center; font-size:11px; color: var(--text-dim); margin-top:8px;">
+        모든 응답은 감사 로그로 보관됩니다 · LLM은 오류가 있을 수 있어 결정적 판단 전 검증이 필요합니다
+      </div>
+    </div>
+  </section>
+
+  <!-- Right rail -->
+  <aside class="rail">
+    <div class="tabs">
+      <div class="tab active" data-pane="agents">에이전트</div>
+      <div class="tab" data-pane="systems">연동</div>
+      <div class="tab" data-pane="sources">출처</div>
+      <div class="tab" data-pane="context">컨텍스트</div>
+    </div>
+
+    <div class="pane active" data-pane="agents">
+      <h5>이 대화 활성 에이전트</h5>
+      <div id="rail-agents"></div>
+      <h5 style="margin-top:18px;">제안 (자주 함께 사용)</h5>
+      <div id="rail-suggest"></div>
+      <a href="mlops.html#catalog" style="display:block;text-align:center;margin-top:12px;font-size:12px;color:var(--accent);">에이전트 카탈로그 전체 보기 →</a>
+      <a href="mlops.html#workspace" style="display:block;text-align:center;margin-top:6px;font-size:12px;color:var(--accent);">+ 내 에이전트 만들기 →</a>
+    </div>
+
+    <div class="pane" data-pane="systems">
+      <h5>연동된 시스템</h5>
+      <div id="rail-systems"></div>
+      <h5 style="margin-top:18px;">사용 모델</h5>
+      <div class="src-card">
+        <div class="head"><span class="dot green"></span><div style="flex:1;font-size:12.5px;font-weight:500;" id="rail-model-name">…</div><span class="chip">vLLM</span></div>
+        <div class="snippet" id="rail-model-desc">…</div>
+      </div>
+    </div>
+
+    <div class="pane" data-pane="sources">
+      <h5>이 대화 출처</h5>
+      <div id="rail-sources"></div>
+    </div>
+
+    <div class="pane" data-pane="context">
+      <h5>대화 컨텍스트</h5>
+      <div style="font-size:12px;color:var(--text-mut);line-height:1.7;">
+        <div class="row between"><span>토큰 사용</span><span class="mono" style="color:var(--text);">4,182 / 32,768</span></div>
+        <div class="bar" style="margin:6px 0 14px;"><i style="width:12%;"></i></div>
+        <div class="row between"><span>온도</span><span class="mono" style="color:var(--text);">0.2</span></div>
+        <div class="row between"><span>응답 평균</span><span class="mono" style="color:var(--text);">1.8s</span></div>
+        <div class="row between"><span>도구 호출</span><span class="mono" style="color:var(--text);" id="rail-tool-calls">3</span></div>
+      </div>
+      <h5 style="margin-top:18px;">권한 / 영장 범위</h5>
+      <div class="src-card">
+        <div class="head"><span class="dot green"></span><div style="flex:1;" id="rail-warrant">…</div></div>
+      </div>
+      <h5 style="margin-top:18px;">시스템 프롬프트</h5>
+      <div style="font-size:11.5px;font-family:var(--font-mono);background:var(--panel);border:1px solid var(--border);border-radius:var(--r-md);padding:10px 12px;color:var(--text-mut);">
+        역할: 경찰 수사 보조 AI. 영장 범위 외 조회 거부. 개인정보 마스킹. 한국어. 보수적 판단.
+        <a href="mlops.html#prompts" style="display:block;color:var(--accent);margin-top:6px;">v18 편집 ↗</a>
+      </div>
+    </div>
+  </aside>
+
+</div>
+
+<style>@keyframes bp { 0%,100% { opacity: 0.3; } 50% { opacity: 1; } }</style>
+
+<script src="assets/icons.js"></script>
+<script src="assets/conversations.js"></script>
+<script>
+  // Theme
+  const tt = document.getElementById('theme-toggle');
+  const setTheme = (t) => {
+    document.documentElement.setAttribute('data-theme', t);
+    localStorage.setItem('theme', t);
+    tt.innerHTML = Icon(t === 'dark' ? 'sun' : 'moon');
+  };
+  setTheme(localStorage.getItem('theme') || 'dark');
+  tt.onclick = () => setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
+
+  // tab switch
+  document.querySelectorAll('.rail .tab').forEach(t => {
+    t.onclick = () => {
+      document.querySelectorAll('.rail .tab').forEach(x => x.classList.remove('active'));
+      document.querySelectorAll('.rail .pane').forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+      document.querySelector('.rail .pane[data-pane="' + t.dataset.pane + '"]').classList.add('active');
+    };
+  });
+
+  // ICONS for agents in right rail (key → svg path inner)
+  const AGENT_ICONS = {
+    default: '<circle cx="8" cy="6" r="3"/><path d="M2 14c.5-2.5 3-4 6-4s5.5 1.5 6 4"/>',
+    car: '<ellipse cx="8" cy="4" rx="5" ry="2"/><path d="M3 4v4c0 1.1 2.2 2 5 2s5-.9 5-2V4M3 8v4c0 1.1 2.2 2 5 2s5-.9 5-2V8"/>',
+    img: '<path d="M2 8s2-4 6-4 6 4 6 4-2 4-6 4-6-4-6-4Z"/><circle cx="8" cy="8" r="2"/>',
+    ocr: '<path d="M3 3h10v8H8l-3 3v-3H3V3Z"/><path d="M5.5 7h5M5.5 5h3"/>',
+    voice: '<rect x="6" y="2" width="4" height="8" rx="2"/><path d="M4 8a4 4 0 0 0 8 0M8 12v2"/>',
+    redact: '<path d="M3 3h10v10H3z"/><path d="m5 6 6 4M5 10l6-4"/>',
+    graph: '<circle cx="3" cy="3" r="1.5"/><circle cx="13" cy="3" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="3" cy="13" r="1.5"/><circle cx="13" cy="13" r="1.5"/><path d="m4 4 3 3m6-3-4 3M4 12l3-3m6 3-4-3"/>',
+    search: '<circle cx="7" cy="7" r="4.5"/><path d="m13.5 13.5-3-3"/>',
+    doc: '<path d="M4 2h6l2 2v10H4z"/><path d="M10 2v2h2M6 7h4M6 9h4M6 11h3"/>',
+    timeline: '<path d="M2 4h12M2 8h12M2 12h12"/><circle cx="4" cy="4" r="1" fill="currentColor"/><circle cx="8" cy="8" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/>',
+    msg: '<path d="M2 4.5A1.5 1.5 0 0 1 3.5 3h9A1.5 1.5 0 0 1 14 4.5v6a1.5 1.5 0 0 1-1.5 1.5H6l-3 2.5v-2.5A1.5 1.5 0 0 1 2 10.5v-6Z"/>',
+    trend: '<path d="M2 12 6 8l3 2 5-6M11 4h3v3"/>',
+    chart: '<path d="M2 13V3M2 13h12M5 11V8M8 11V5M11 11V7"/>',
+    file: '<path d="M4 2h5l3 3v9H4z"/><path d="M9 2v3h3"/>',
+    cdr: '<path d="M3 3h10v10H3z"/><path d="m5 7 2 1 2-2 2 3"/>',
+  };
+  function iconFor(agentName) {
+    const m = {
+      '@차량조회': 'car', '@화질개선': 'img', '@OCR': 'ocr', '@CDR요약': 'cdr',
+      '@통신그래프': 'graph', '@GraphRAG': 'graph', '@PII마스킹': 'redact',
+      '@SNS수집': 'graph', '@위협분류': 'chart', '@영장청구초안': 'doc',
+      '@폴넷검색': 'search', '@폴넷쪽지': 'msg', '@음성받아쓰기': 'voice',
+      '@요약': 'doc', '@타임라인': 'timeline', '@법령검색': 'doc',
+      '@판례검색': 'doc', '@양식검사': 'doc', '@보이스피싱분류': 'chart',
+      '@트렌드분석': 'trend', '@사건조회': 'search', '@로그집계': 'chart',
+      '@보고서작성': 'doc',
+    };
+    return AGENT_ICONS[m[agentName] || 'default'] || AGENT_ICONS.default;
+  }
+
+  // SUGGESTIONS pool — always show 4
+  const SUGGESTIONS_POOL = [
+    { name: '@사건조회', desc: 'KICS 사건 색인 검색, 인물·사건 연결 그래프 구성', tools: ['KICS'] },
+    { name: '@CCTV시간매칭', desc: '시간대·위치 기준 CCTV 영상 인덱스, 차량 재식별', tools: ['cctv-reid-v2'] },
+    { name: '@법령검색', desc: '국가법령정보센터 RAG · 판례/시행규칙 인용', tools: ['law-v3'] },
+    { name: '@보고서작성', desc: '사건/일일 보고서 자동 초안 작성', tools: ['report-draft'] },
+    { name: '@계좌분석', desc: '금융정보 거래 흐름 추적·시각화', tools: ['금감원 API'] },
+    { name: '@CDR요약', desc: '통신자료 ETL · 통화 패턴/이상 탐지', tools: ['neo-cdr'] },
+    { name: '@GraphRAG', desc: '인물·사건·증거 그래프 기반 RAG', tools: ['Neo4j'] },
+    { name: '@폴넷쪽지', desc: '사내 폴넷 쪽지 자동 발송 (개인 자동화)', tools: ['폴넷 API'] },
+  ];
+
+  const MODELS = {
+    'police-llm-13b': '경찰 도메인 한국어 LLM (13B) · vLLM 서빙 · tool calling · 32k 컨텍스트',
+    'police-llm-13b · CDR-summarizer': 'police-llm-13b + CDR 요약 LoRA 어댑터 적용',
+    'police-llm-13b · GraphRAG': 'police-llm-13b + Neo4j GraphRAG 결합',
+    'police-llm-13b · summarize-extract': 'police-llm-13b + 진술 요약/엔티티 추출 미세조정',
+    'police-llm-13b · 법령RAG': 'police-llm-13b + 국가법령정보 RAG 결합',
+    'phishing-classify-v2.4 + police-llm-13b': '분류 모델로 라벨링 후 LLM이 해설',
+    'police-llm-13b · report-draft': 'police-llm-13b + 보고서 양식 schema-guided 디코딩',
+  };
+
+  function renderAgentCard(a, added=true) {
+    return `<div class="agent-card ${added ? 'added' : ''}">
+      <div class="row">
+        <div class="ico-box"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">${iconFor(a.name)}</svg></div>
+        <div style="flex:1;">
+          <div class="name">${a.name}${added ? ' <span class="chip green" style="font-size:10px;padding:1px 6px;">활성</span>' : ''}</div>
+          <div class="desc">${a.desc || a.sys || ''}</div>
+          ${a.tools && a.tools.length ? `<div class="toolchain">${a.tools.map(t => `<span class="chip">${t}</span>`).join('')}</div>` : (a.sys ? `<div class="toolchain"><span class="chip">${a.sys}</span></div>` : '')}
+        </div>
+        <button class="add-btn">${added ? '✓' : '+'}</button>
+      </div>
+    </div>`;
+  }
+
+  // Render selected conversation
+  function loadConversation(id) {
+    const conv = window.CONVERSATIONS[id];
+    if (!conv) return;
+
+    // sidebar selection
+    document.querySelectorAll('.conv').forEach(c => c.classList.toggle('active', c.dataset.conv === id));
+
+    // header
+    document.getElementById('chat-title').textContent = conv.title;
+    document.getElementById('chat-meta').textContent = conv.meta;
+    document.getElementById('crumb-here').textContent = conv.title;
+
+    const agentsOn = document.getElementById('chat-agents-on');
+    agentsOn.innerHTML = '<span style="color:var(--text-mut)">활성 에이전트</span>' +
+      conv.agents.map(a => `<span class="agent-pill">${a.name}</span>`).join('');
+    document.getElementById('composer-agents').textContent = '에이전트 ' + conv.agents.length;
+    document.getElementById('model-name').textContent = conv.model.split(' · ')[0];
+
+    // messages
+    const scroll = document.getElementById('chat-scroll');
+    scroll.innerHTML = conv.messages.map(m => {
+      const avatar = m.who === 'user' ? '장' : 'AI';
+      const cls = m.who;
+      const nameLine = m.who === 'user' ?
+        `<span class="name">${m.name}</span>` :
+        `<span class="name">수사 보조 AI</span><span>·</span><span class="mono" style="font-size:11px;">${conv.model}</span>`;
+      const citations = m.citations && m.citations.length ?
+        `<div class="citations"><div class="ct-head">출처 (${m.citations.length})</div>${
+          m.citations.map(c => `<div class="citation"><div class="ix">${c.ix}</div><div>${c.label} <span class="src">${c.sub}</span></div><span class="chip">${c.type}</span></div>`).join('')
+        }</div>` : '';
+      return `<div class="msg ${cls}">
+        <div class="avatar">${avatar}</div>
+        <div class="body">
+          <div class="who">${nameLine}<span class="time">${m.time}</span></div>
+          <div class="content">${m.body}${citations}</div>
+        </div>
+      </div>`;
+    }).join('');
+    scroll.scrollTop = 0;
+
+    // rail: agents
+    document.getElementById('rail-agents').innerHTML = conv.agents.map(a => renderAgentCard(a, true)).join('');
+    // rail: suggestions (4 random, excluding those already added)
+    const activeNames = new Set(conv.agents.map(a => a.name));
+    const sug = SUGGESTIONS_POOL.filter(s => !activeNames.has(s.name)).slice(0, 4);
+    document.getElementById('rail-suggest').innerHTML = sug.map(s => renderAgentCard(s, false)).join('');
+
+    // rail: systems
+    document.getElementById('rail-systems').innerHTML = conv.systems.map(s => `
+      <div class="src-card" style="padding: 8px 12px;">
+        <div class="head"><span class="dot green"></span><div style="flex:1;font-size:12.5px;">${s}</div><span class="chip green" style="font-size:10px;">연결</span></div>
+      </div>
+    `).join('');
+
+    // rail: model
+    document.getElementById('rail-model-name').textContent = conv.model;
+    document.getElementById('rail-model-desc').textContent = MODELS[conv.model] || 'police-llm-13b 기반';
+
+    // rail: sources
+    document.getElementById('rail-sources').innerHTML = (conv.sources || []).map(s => `
+      <div class="src-card">
+        <div class="head"><div class="ix">${s.ix}</div><div style="flex:1;">${s.title}</div><span class="chip">${s.type}</span></div>
+        <div class="snippet">${s.snippet}</div>
+        <div class="meta">${s.meta}</div>
+      </div>
+    `).join('') || '<div style="font-size:12px;color:var(--text-mut);">이 대화에는 출처가 없습니다.</div>';
+
+    // rail: warrant
+    document.getElementById('rail-warrant').textContent = conv.warrant || '—';
+    document.getElementById('rail-tool-calls').textContent =
+      conv.messages.reduce((n, m) => n + (m.body.match(/tool-call exp/g) || []).length, 0);
+
+    if (location.hash !== '#' + id) history.replaceState(null, '', '#' + id);
+  }
+
+  // wire up clicks
+  document.querySelectorAll('.conv').forEach(c => {
+    c.onclick = () => loadConversation(c.dataset.conv);
+  });
+
+  // initial
+  const initial = (location.hash || '').replace('#', '') || 'vehicle-track';
+  loadConversation(window.CONVERSATIONS[initial] ? initial : 'vehicle-track');
+</script>
+
+</body>
+</html>
